@@ -1,2 +1,8 @@
-.vscode/*
+# build artifacts
+out
+
+# machine-local: editor state and local toolchain routing — never tracked
+.vscode/
+.toolchain/
+
 CLAUDE.md
