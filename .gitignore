@@ -1,5 +1,6 @@
 # build artifacts
 out
+build/
 
 # machine-local: editor state and local toolchain routing — never tracked
 .vscode/

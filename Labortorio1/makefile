@@ -13,4 +13,4 @@ all:
 	./out
 
 clean:
-	$(RM) $(TARGET)
+	$(RM) out
