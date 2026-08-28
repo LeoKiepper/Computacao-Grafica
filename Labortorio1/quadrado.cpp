@@ -5,9 +5,18 @@
 #define TAMANHO_JANELA 500
 
 
-float gX = 0;
-float gY = 0;
+float gX = 0.5;
+float gY = 0.5;
+float gW = 0.5;
+float gH = 0.5;
 int keyStatus[256];
+float last_cursor_x = 0.5;
+float last_cursor_y = 0.5;
+float cursor_x = 0.5;
+float cursor_y = 0.5;
+float delta_x = 0;
+float delta_y = 0;
+int mbleft_is_down = 0;
 
 void display(void)
 {
@@ -18,10 +27,10 @@ void display(void)
    glColor3f (1.0, 0.5, 0.5);
    /* Desenhar um polígono branco (retângulo) */
    glBegin(GL_POLYGON);
-      glVertex3f (0.25+gX, 0.25+gY, 0.0);
-      glVertex3f (0.75+gX, 0.25+gY, 0.0);
-      glVertex3f (0.75+gX, 0.75+gY, 0.0);
-      glVertex3f (0.25+gX, 0.75+gY, 0.0);
+      glVertex3f (gX-gW/2, gY-gH/2, 0.0);
+      glVertex3f (gX+gW/2, gY-gH/2, 0.0);
+      glVertex3f (gX+gW/2, gY+gH/2, 0.0);
+      glVertex3f (gX-gW/2, gY+gH/2, 0.0);
    glEnd();
 
    /* Desenhar no frame buffer! */
@@ -75,14 +84,44 @@ void idle(void){
    if(keyStatus[(int)('d')]) gX += inc;
    if(keyStatus[(int)('w')]) gY += inc;
    if(keyStatus[(int)('s')]) gY -= inc;
+   if (mbleft_is_down) {
+      delta_x = cursor_x - last_cursor_x;
+      delta_y = cursor_y - last_cursor_y;
+      if (dragging){
+         gX += delta_x;
+         gY += delta_y;
+      }
+      last_cursor_x = cursor_x;
+      last_cursor_y = cursor_y;
+   }
    glutPostRedisplay();
 }
 void mouse(int button, int state, int x, int y){
-   // printf("mX=%i, mY=%i\n", x, TAMANHO_JANELA-y);
+   // printf("button=%i, state=%i\n", button, state);
    // fflush(stdout);
-   gX = float(x)/float(TAMANHO_JANELA);
-   gY = float(TAMANHO_JANELA-y)/float(TAMANHO_JANELA);
-}  
+   if (button==0) {    // Botão esquerdo
+      if (state==0){   // Botão apertado
+         mbleft_is_down = 1;
+         cursor_x = float(x)/float(TAMANHO_JANELA);
+         cursor_y = float(TAMANHO_JANELA - y)/float(TAMANHO_JANELA);
+         if (((gX-gW/2)<=cursor_x && cursor_x<=(gX+gW/2)) && ((gY-gH/2)<=cursor_y && cursor_y<=(gY+gH/2))){
+            dragging = 1;
+         }
+      } else {
+         mbleft_is_down = 0;
+         dragging = 0;
+      }
+      last_cursor_x = cursor_x;
+      last_cursor_y = cursor_y;
+   }
+   glutPostRedisplay();
+}
+void passiveMotion(int x, int y)
+{
+   cursor_x = float(x)/float(TAMANHO_JANELA);
+   cursor_y = float(TAMANHO_JANELA - y)/float(TAMANHO_JANELA);
+   glutPostRedisplay();
+}
 int main(int argc, char** argv)
 {
     glutInit(&argc, argv);
@@ -94,6 +133,7 @@ int main(int argc, char** argv)
     glutDisplayFunc(display); 
     glutKeyboardFunc(keyPress);
     glutKeyboardUpFunc(keyUp);
+    glutMotionFunc(passiveMotion);
     glutIdleFunc(idle);
     glutMouseFunc(mouse);
     glutMainLoop();
