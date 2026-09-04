@@ -126,6 +126,8 @@ void motion(int x, int y){
         float absPB = abs2D(lineseg_a_to_b(pP,pB));
         float absGR = abs2D(lineseg_a_to_b(pG,pR));
 
+
+        // Entrega os componentes calculados para as variáveis globais usadas na aplicação da cor
         gB = (1.0 - absCliqueB/absPB);
         gR = (1.0 - absPR/absGR) * absCliqueB/absPB;
         gG = (1.0 - absPG/absGR) * absCliqueB/absPB;
