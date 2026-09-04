@@ -1,0 +1,193 @@
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/glut.h>
+#include <stdio.h>
+#include <math.h>
+#define TAMANHO_JANELA 500
+
+
+struct Vec3 { float x, y, z; };
+Vec3 cross(Vec3 a, Vec3 b) {
+    return { a.y * b.z - a.z * b.y,
+             a.z * b.x - a.x * b.z,
+             a.x * b.y - a.y * b.x };
+}
+Vec3 lineseg_a_to_b(Vec3 a, Vec3 b){
+    return {b.x - a.x, b.y-a.y, a.z-b.z};
+}
+float abs2D(Vec3 vec){
+    return sqrt(vec.x*vec.x+vec.y*vec.y);
+}
+
+//Pontos do triangulo
+float pRx = 0.1;
+float pRy = 0.1;
+float pGx = 0.9;
+float pGy = 0.1;
+float pBx = 0.5;
+float pBy = 0.9;
+
+//Controle dos arrastes
+int draggingPointR = 0, draggingPointG = 0, draggingPointB = 0, choosingColor = 0;
+
+//Cor
+float gR = 0., gG = 0., gB = 0.;
+
+//Ponto do clique da cor
+float pCliqueX = 0, pCliqueY = 0;
+//Pronto do clique projetado
+float pProjX = 0, pProjY = 0;
+
+        
+void display(void)
+{
+   //Define a cor do fundo
+   glClearColor (gR, gG, gB, 0.0);
+
+   /* Limpar todos os pixels  */
+   glClear (GL_COLOR_BUFFER_BIT);
+
+   /* Define cor dos vértices com os valores R, G e B variando de 0.0 a 1.0 */
+   /* Desenhar um polígono branco (retângulo) */
+   glBegin(GL_POLYGON);
+      glColor3f (1.0, 0.0, 0.0);
+      glVertex3f (pRx, pRy, 0.0);
+      glColor3f (0.0, 1.0, 0.0);
+      glVertex3f (pGx, pGy, 0.0);
+      glColor3f (0.0, 0.0, 1.0);
+      glVertex3f (pBx, pBy, 0.0);
+   glEnd();
+
+   /* Desenha o ponto de clique. */
+   glPointSize(5.0);
+   glColor3f(1.0, 1.0, 0.0);
+   glBegin(GL_POINTS);
+        glVertex3f(pCliqueX, pCliqueY, 0.0);
+   glEnd();
+
+   /* Desenha o ponto projetado. */
+   glPointSize(5.0);
+   glColor3f(1.0, 1.0, 1.0);
+   glBegin(GL_POINTS);
+        glVertex3f(pProjX, pProjY, 0.0);
+   glEnd();
+   
+   /* Desenhar no frame buffer! */
+   glutSwapBuffers(); //Funcao apropriada para janela double buffer
+}
+
+void init (void) 
+{
+  /* selecionar cor de fundo (preto) */
+  glClearColor (0.0, 0.0, 0.0, 0.0);
+
+  /* inicializar sistema de visualizacao */
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
+}
+
+void motion(int x, int y){
+    //Corrige a posicao do mouse para a posicao da janela de visualizacao
+    y = TAMANHO_JANELA - y;
+    GLfloat fX = (GLfloat)x/TAMANHO_JANELA;
+    GLfloat fY = (GLfloat)y/TAMANHO_JANELA;
+    
+    if (choosingColor){
+        //Atualiza posicao do clique
+        pCliqueX = fX;
+        pCliqueY = fY;
+
+
+
+
+        // Pontos
+        Vec3 pClique = {pCliqueX,pCliqueY, 1.0};
+        Vec3 pR = {pRx, pRy, 1.0};
+        Vec3 pG = {pGx, pGy, 1.0};
+        Vec3 pB = {pBx, pBy, 1.0};
+
+        // Encontra P, o ponto de interseção entre a reta (pClique,pB) e a reta (pG,pR)
+        // Calcula retas suporte
+        Vec3 retasuporte_CliqueB = cross(pClique,pB);
+        Vec3 retasuporte_GR = cross(pG,pR);
+        // x e y são os componentes i e j do vetor normal da reta suporte entre os pontos
+
+        Vec3 pP = cross(retasuporte_CliqueB,retasuporte_GR);
+        if (fabsf(pP.z) < 1e-6f) return; // retas informadas no cross acima eram paralelas
+        pP.x = pP.x / pP.z; 
+        pP.y = pP.y / pP.z;
+        pP.z = 1.0; 
+
+        // Calcula as dimensões dos segmentos de linha
+        float absCliqueB = abs2D(lineseg_a_to_b(pClique,pB));
+        float absPR = abs2D(lineseg_a_to_b(pP,pR));
+        float absPG = abs2D(lineseg_a_to_b(pP,pG));
+        float absPB = abs2D(lineseg_a_to_b(pP,pB));
+        float absGR = abs2D(lineseg_a_to_b(pG,pR));
+
+        gB = (1.0 - absCliqueB/absPB);
+        gR = (1.0 - absPR/absGR) * absCliqueB/absPB;
+        gG = (1.0 - absPG/absGR) * absCliqueB/absPB;
+
+    } else if (draggingPointR){
+        pRx = (GLfloat)x/TAMANHO_JANELA;
+        pRy = (GLfloat)y/TAMANHO_JANELA;
+    } else if (draggingPointG){
+        pGx = (GLfloat)x/TAMANHO_JANELA;
+        pGy = (GLfloat)y/TAMANHO_JANELA;
+    } else if (draggingPointB){
+        pBx = (GLfloat)x/TAMANHO_JANELA;
+        pBy = (GLfloat)y/TAMANHO_JANELA;
+    }
+    
+    glutPostRedisplay();
+}
+
+void mouse(int button, int state, int x, int y){
+    //Corrige a posicao do mouse para a posicao da janela de visualizacao
+    GLfloat fX = (GLfloat)x/TAMANHO_JANELA;
+    GLfloat fY = (GLfloat)(TAMANHO_JANELA - y)/TAMANHO_JANELA;
+
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
+        choosingColor = 1;
+    }else if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN){
+        if (    (pRx-fX)*(pRx-fX) +
+                (pRy-fY)*(pRy-fY) < 
+                    (30.0/TAMANHO_JANELA)*(30.0/TAMANHO_JANELA) ){
+            draggingPointR = 1;
+        } else if (     (pGx-fX)*(pGx-fX) +
+                        (pGy-fY)*(pGy-fY) < 
+                            (30.0/TAMANHO_JANELA)*(30.0/TAMANHO_JANELA) ){
+            draggingPointG = 1;
+        } else if (     (pBx-fX)*(pBx-fX) +
+                        (pBy-fY)*(pBy-fY) < 
+                            (30.0/TAMANHO_JANELA)*(30.0/TAMANHO_JANELA) ){
+            draggingPointB = 1;
+        }
+
+    } else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP){
+        choosingColor = 0;
+    }else if (button == GLUT_RIGHT_BUTTON && state == GLUT_UP){
+        draggingPointR = draggingPointG = draggingPointB = 0;
+    }
+    
+    motion(x, y);
+}
+    
+int main(int argc, char** argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
+    glutInitWindowSize (TAMANHO_JANELA, TAMANHO_JANELA); 
+    glutInitWindowPosition (100, 100);
+    glutCreateWindow ("Cores");
+    init ();
+    glutDisplayFunc(display); 
+    glutMotionFunc(motion);
+    glutMouseFunc(mouse);
+
+    glutMainLoop();
+
+    return 0;
+}
