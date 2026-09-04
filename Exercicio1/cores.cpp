@@ -100,6 +100,8 @@ void motion(int x, int y){
 
 
 
+        
+
 
         // Pontos
         Vec3 pClique = {pCliqueX,pCliqueY, 1.0};
@@ -131,6 +133,11 @@ void motion(int x, int y){
         gB = (1.0 - absCliqueB/absPB);
         gR = (1.0 - absPR/absGR) * absCliqueB/absPB;
         gG = (1.0 - absPG/absGR) * absCliqueB/absPB;
+
+
+
+
+
 
     } else if (draggingPointR){
         pRx = (GLfloat)x/TAMANHO_JANELA;
