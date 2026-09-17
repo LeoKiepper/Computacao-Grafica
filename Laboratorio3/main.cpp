@@ -59,7 +59,7 @@ void renderScene(void)
      
      alvo.Desenha();
 
-     ImprimePlacar(50,-50);
+     ImprimePlacar(5-ViewingWidth/2,5-ViewingHeight/2);
 
      glutSwapBuffers(); // Desenha the new frame of the game.
 }
