@@ -6,6 +6,13 @@
 
 #define radiusAlvo 20
 
+static const GLfloat kCoresAlvo[][3] = {
+    {1.0f, 0.0f, 0.0f},   // red
+    {0.0f, 1.0f, 0.0f},   // green
+    {0.0f, 0.0f, 1.0f},   // blue
+};
+static const int kNumCoresAlvo = sizeof(kCoresAlvo) / sizeof(kCoresAlvo[0]);
+
 class Alvo {
     GLfloat gX; 
     GLfloat gY;
@@ -24,6 +31,8 @@ public:
     };
     void Recria(GLfloat x, GLfloat y);
     bool Atingido(Tiro *tiro);
+
+
 };
 
 #endif	/* ALVO_H */

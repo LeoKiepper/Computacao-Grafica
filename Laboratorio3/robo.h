@@ -54,6 +54,7 @@ public:
     GLfloat ObtemY(){
         return gY;
     };
+    void PontoDaHaste3(GLfloat xLocal, GLfloat yLocal, GLfloat &xOut, GLfloat &yOut);
 };
 
 #endif	/* ROBO_H */

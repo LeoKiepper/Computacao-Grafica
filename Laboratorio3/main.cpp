@@ -28,6 +28,26 @@ Robo robo; //Um rodo
 Tiro * tiro = NULL; //Um tiro por vez
 Alvo alvo(0, 200); //Um alvo por vez
 
+int atingido = 0;
+static char str[1000];
+void * font = GLUT_BITMAP_9_BY_15;
+void ImprimePlacar(GLfloat x, GLfloat y)
+{
+    glLoadIdentity();
+    glColor3f(1.0, 1.0, 1.0);
+    //Cria a string a ser impressa
+    char *tmpStr;
+    sprintf(str, "Atingido: %d", atingido );
+    //Define a posicao onde vai comecar a imprimir
+    glRasterPos2f(x, y);
+    //Imprime um caractere por vez
+    tmpStr = str;
+    while( *tmpStr ){
+        glutBitmapCharacter(font, *tmpStr);
+        tmpStr++;
+    }
+}
+
 void renderScene(void)
 {
      // Clear the screen.
@@ -38,6 +58,8 @@ void renderScene(void)
      if (tiro) tiro->Desenha();
      
      alvo.Desenha();
+
+     ImprimePlacar(50,-50);
 
      glutSwapBuffers(); // Desenha the new frame of the game.
 }
@@ -125,6 +147,15 @@ void init(void)
 
 void idle(void)
 {
+    static GLdouble previousTime = glutGet(GLUT_ELAPSED_TIME);
+    GLdouble currentTime, timeDiference;
+    //Pega o tempo que passou do inicio da aplicacao
+    currentTime = glutGet(GLUT_ELAPSED_TIME);
+    // Calcula o tempo decorrido desde de a ultima frame.
+    timeDiference = currentTime - previousTime;
+    //Atualiza o tempo do ultimo frame ocorrido
+    previousTime = currentTime;
+
     double inc = INC_KEYIDLE;
     //Treat keyPress
     if(keyStatus[(int)('a')])
@@ -139,7 +170,7 @@ void idle(void)
     //Trata o tiro (soh permite um tiro por vez)
     //Poderia usar uma lista para tratar varios tiros
     if(tiro){
-        tiro->Move();
+        tiro->Move(timeDiference);
 
         //Trata colisao
         if (alvo.Atingido(tiro)){

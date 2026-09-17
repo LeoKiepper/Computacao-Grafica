@@ -6,11 +6,11 @@ CXX = g++
 #  -Wall turns on most, but not all, compiler warnings
 CFLAGS  = -g -Wall
 LINKING = -lglut -lGL -lGLU
-TARGET = *
+TARGET = spline
 
 all:
-	$(CXX) $(CFLAGS) -o test $(TARGET).cpp $(LINKING)
-	./test
+	$(CXX) $(CFLAGS) -o out $(TARGET).cpp $(LINKING)
+	./out
 
 clean:
 	$(RM) out
