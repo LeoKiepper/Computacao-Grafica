@@ -38,9 +38,5 @@ bool Alvo::Atingido(Tiro *tiro)
     tiro->GetPos(x, y);
     GLfloat dx = x - gX;
     GLfloat dy = y - gY;
-    if((dx*dx + dy*dy) <= (radiusAlvo*radiusAlvo)){
-        atingido+=1;
-        return 1;
-    }
-    return 0;
+    return (dx*dx + dy*dy) <= (radiusAlvo*radiusAlvo);
 }

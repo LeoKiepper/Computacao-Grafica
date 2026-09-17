@@ -174,6 +174,7 @@ void idle(void)
 
         //Trata colisao
         if (alvo.Atingido(tiro)){
+            atingido++;
             alvo.Recria(rand()%500 - 250, 200);
         }
 
