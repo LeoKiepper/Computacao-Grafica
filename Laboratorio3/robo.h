@@ -18,6 +18,8 @@ class Robo {
     GLfloat gTheta3; 
     GLfloat gThetaWheel; 
     GLfloat direction;
+    GLfloat gMatrizHaste3[16];
+
 private:
     void DesenhaRect(  GLint height, GLint width, 
                     GLfloat R, GLfloat G, GLfloat B);

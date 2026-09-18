@@ -44,6 +44,8 @@ void Robo::DesenhaBraco(GLfloat x, GLfloat y, GLfloat theta1, GLfloat theta2, GL
         glTranslatef(0,paddleHeight,0);
         glRotatef(theta3, 0, 0, 1);
         DesenhaRect(paddleHeight,paddleWidth,0,1,0);
+
+        glGetFloatv(GL_MODELVIEW_MATRIX, gMatrizHaste3);
     glPopMatrix();
 }
 
@@ -90,6 +92,13 @@ void Robo::MoveEmX(GLfloat dx)
 }
 
 //Funcao auxiliar de rotacao
+//OpenGL guarda a matriz por colunas: coluna 0 = m[0..3],
+//coluna 1 = m[4..7], translacao = m[12..14]
+// gMatrizHaste3 índices
+// 0  4  8  12
+// 1  5  9  13
+// 2  6  10 14
+// 3  7  11 15
 void RotatePoint(GLfloat x, GLfloat y, GLfloat angle, GLfloat &xOut, GLfloat &yOut){
     GLfloat rad = angle * M_PI / 180.0;
     GLfloat c = cos(rad);
@@ -99,17 +108,30 @@ void RotatePoint(GLfloat x, GLfloat y, GLfloat angle, GLfloat &xOut, GLfloat &yO
 }
 void Robo::PontoDaHaste3(GLfloat xLocal, GLfloat yLocal, GLfloat &xOut, GLfloat &yOut)
 {
-    GLfloat x = xLocal, y = yLocal;
+    // Solução 1: Refaz o caminho de transformações
+    // GLfloat x = xLocal, y = yLocal;
 
-    RotatePoint(x, y, gTheta3, x, y);
-    y += paddleHeight;
-    RotatePoint(x, y, gTheta2, x, y);
-    y += paddleHeight;
-    RotatePoint(x, y, gTheta1, x, y);
-    y += baseHeight;
+    // RotatePoint(x, y, gTheta3, x, y);
+    // y += paddleHeight;
+    // RotatePoint(x, y, gTheta2, x, y);
+    // y += paddleHeight;
+    // RotatePoint(x, y, gTheta1, x, y);
+    // y += baseHeight;
 
-    xOut = x + gX;
-    yOut = y + gY;
+    // xOut = x + gX;
+    // yOut = y + gY;
+
+    // Solução 2: Salva a matriz e resgata para reutilizar
+    GLfloat* H = gMatrizHaste3;
+
+    // Faz a multiplicação matricial manualmente, pois o OpenGL não provê ferramenta
+    // gMatrizHaste3 índices (OpenGL é column-major)
+    // 0  4  8  12
+    // 1  5  9  13
+    // 2  6  10 14
+    // 3  7  11 15
+    xOut = H[0]*xLocal + H[4]*yLocal + H[12];
+    yOut = H[1]*xLocal + H[5]*yLocal + H[13];
 }
 Tiro* Robo::Atira()
 {
