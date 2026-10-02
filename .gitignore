@@ -10,3 +10,4 @@ build/
 CLAUDE.md
 CONTEXT-TRANSFER.md
 debland-stack.tar.gz
+*.o
