@@ -49,7 +49,7 @@ void init(void)
    axis_lims[1][0],axis_lims[1][1],
    axis_lims[2][0],axis_lims[2][1]);
    for(int pp=NumPoints; pp<MAX_POINTS; pp++){
-      init_ctrlpoint(pp)
+      init_ctrlpoint(pp);
    }
 }
 
@@ -129,14 +129,14 @@ void keyPress(unsigned char key, int x,int y){
          return;
       }
       NumPoints++;
-      init_ctrlpoint(NumPoints)
+      init_ctrlpoint(NumPoints);
    } 
    if (key=='-'){
       if (NumPoints<=MIN_POINTS) {
          NumPoints=MIN_POINTS;
          return;
       }
-      init_ctrlpoint(NumPoints)
+      init_ctrlpoint(NumPoints);
       NumPoints--;
    }
    glMap1f(GL_MAP1_VERTEX_3, 0.0, 1.0, STRIDE, NumPoints, &ctrlpoints[0][0]); 
