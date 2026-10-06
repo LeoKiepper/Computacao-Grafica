@@ -11,3 +11,8 @@ CLAUDE.md
 CONTEXT-TRANSFER.md
 debland-stack.tar.gz
 *.o
+Trabalho2D/trabalho2d
+
+# clangd index
+.cache/
+Trabalho2D/trabalhocg

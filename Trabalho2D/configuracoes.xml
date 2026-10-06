@@ -1,7 +1,32 @@
 <jogo>
-  <arena  altura="500" largura="200"/>
-  <jogador raioCabeca="50" velocidade="..."/>
-  <inimigo raioCabeca="50" tirosPorSegundo="..." velocidadeTiro="..."/>
-  <barril altura="..." largura="..." numeroTiros="..." nParaGanhar="..." velocidade="..."/>
+  <inimigo tirosPorSegundo="..." />
+  <tiros tirosSimultaneosPermitidos="5" />
+  <barril resistencia="..." nParaGanhar="..." />
   <outros pensar="..." emAlgo="..."/>
 </jogo>
+
+<!-- As dimensões declaradas em geometriaBase relativas aos componentes usados -->
+<!-- para desenhar jogador e inimigos são os valores de referência. A escala é -->
+<!-- calculada programaticamente fazendo -->
+<!-- geometria.jogadores.raioCabeca / geometriaBase.jogadores.raioCabeca -->
+<geometriaBase>
+  <arena  altura="500" largura="200"/>
+  <jogadores raioCabeca="30" larguraArma="20" comprimentoArma="110" posyArma="-30" comprimentoPernas="50" larguraPernas="15"/>
+  <barril altura="..." largura="..."/>
+</geometriaBase>
+<geometria>
+  <jogadores raioCabeca="15"/>
+</geometria>
+<cinematica>
+  <jogador velocidadeMovimento="0.25" velocidadeGiro="0.25" velocidadeMira="0.2" aberturaAngular="60"/>
+  <tiros velocidadeTiro="0.9"/>
+  <barril velocidade="0.1"/>
+</cinematica>
+<cores>
+  <arena R="0.30980392156862745098" G="0.50588235294117647059" B="0.74117647058823529412"/>
+  <arma R="0.75294117647058823529" G="0.31372549019607843137" B="0.3019607843137254902"/>
+  <cabecaJogador R="0.60784313725490196079" G="0.73333333333333333333" B="0.3490196078431372549" />
+  <cabecaInimigo R="0.5019607843137254902" G="0.39215686274509803922" B="0.63529411764705882353" />
+  <pernas R="0" G="0" B="0" />
+  <barril R="0.96862745098039215686" G="0.58823529411764705882" B="0.27450980392156862745"/>
+</cores>
