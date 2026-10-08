@@ -2,6 +2,8 @@
 out
 test
 build/
+*.o
+*.d
 
 # machine-local: editor state and local toolchain routing — never tracked
 .vscode/
@@ -10,7 +12,6 @@ build/
 CLAUDE.md
 CONTEXT-TRANSFER.md
 debland-stack.tar.gz
-*.o
 Trabalho2D/trabalho2d
 
 # clangd index

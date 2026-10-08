@@ -1,9 +1,9 @@
 CC = gcc
 CXX = g++
-CFLAGS  = -g -Wall
+CFLAGS  = -g -Wall -MMD -MP
 LINKING = -lglut -lGL -lGLU
 TARGET = trabalhocg
-SOURCES = main.cpp tinyxml.cpp tinyxmlparser.cpp tinyxmlerror.cpp tinystr.cpp barril.cpp jogador.cpp config.cpp funcoesaux.cpp tiro.cpp
+SOURCES = main.cpp tinyxml.cpp tinyxmlparser.cpp tinyxmlerror.cpp tinystr.cpp barril.cpp atirador.cpp config.cpp funcoesaux.cpp tiro.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 
 all: $(TARGET)
@@ -18,12 +18,12 @@ run: all
 	./$(TARGET)
 
 clean:
-	$(RM) $(TARGET) $(OBJECTS)
+	$(RM) $(TARGET) $(OBJECTS) $(OBJECTS:.o=.d)
 
 .PHONY: all run clean
 
 
-# struct Config is generated from configuracoes.xml (see gerador_config.cpp)
+
 TINYXML = tinyxml.cpp tinyxmlparser.cpp tinyxmlerror.cpp tinystr.cpp
 gerador_config: gerador_config.cpp $(TINYXML)
 	$(CXX) $(CFLAGS) -o $@ $^
@@ -35,3 +35,6 @@ config.o: config_campos.h
 clean: clean_config
 clean_config:
 	$(RM) gerador_config config_gerado.h config_campos.h
+
+
+

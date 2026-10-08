@@ -1,13 +1,16 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
+#include <cstddef>
 #include <stdio.h>
-#include "jogador.h"
+#include "atirador.h"
 #include "barril.h"
 #include "config.h"
 #include "tiro.h"
 #include "funcoesaux.h"
 #include <vector>
+#include <ctime>
+#include <cstdlib>
 
 // Coloca em variáveis globais os parâmetros de configuração usados nesse módulo ====
 #pragma region
@@ -15,8 +18,15 @@
     const GLfloat arenaAltura = cfg.geometriaBase.arena.altura; 
     const GLfloat arenaLargura = cfg.geometriaBase.arena.largura;
     const GLdouble raioJogador = cfg.geometria.jogadores.raioCabeca;
-    Jogador* jogador = NULL;
-    std::vector<Tiro*> tiros((int)cfg.jogo.tiros.tirosSimultaneosPermitidos, NULL);
+    const GLdouble alturaBarril = cfg.geometriaBase.barril.altura;
+    const GLdouble diametroBarril = cfg.geometriaBase.barril.diametro;
+    Atirador* jogador = NULL;
+    std::vector<Barril*> barris((int)cfg.jogo.barril.maximoSimultaneo, NULL);
+    std::vector<bool> barrisForaDaArena((int)cfg.jogo.barril.maximoSimultaneo, false);
+    
+    // Barril* barril = NULL;
+    // bool barrilForaDaArena=false;
+    std::vector<Tiro*> tirosJogador((int)cfg.jogo.tiros.tirosJogadorSimultaneosPermitidos, NULL);
     int keyStatus[256];
 
     float cursor_x=0, cursor_y=0;
@@ -28,13 +38,30 @@
         -arenaAltura/2.0  + raioJogador,     // yMin
                           - raioJogador      // yMax (linha do meio)
     };
+    const Limites limitesBarril = {
+        -arenaLargura/2.0 + alturaBarril/2.0,   // xMin
+         arenaLargura/2.0 - alturaBarril/2.0,   // xMax
+        -arenaAltura/2.0  - diametroBarril/2.0, // yMin
+         arenaAltura/2.0  + diametroBarril/2.0  // yMax
+    };
     GLdouble x0_jogador(){return limitesJogador.centroX();};
     GLdouble y0_jogador(){return limitesJogador.yMin;};
+    GLdouble x0_barril(){
+        GLdouble t = (rand() / (double)RAND_MAX);
+        static const GLdouble xMin = limitesBarril.xMin;
+        static const GLdouble xMax = limitesBarril.xMax;
+        return xMin + t * (xMax - xMin);
+    }
+    GLdouble y0_barril(){return limitesBarril.yMax-100;};
 #pragma endregion
 
 
 void colisaoArena_jogador(GLdouble& x, GLdouble& y) {
     limitesJogador.limita(x, y);
+}
+void colisaoArena_barril(GLdouble x, GLdouble y, int bb){
+    if (y > limitesBarril.yMin) return;  // O barril ainda não chegou no seu yMin
+    barrisForaDaArena[bb]=true;
 }
 void DesenhaLinhaDaMetade(){
     glPushAttrib(GL_LINE_BIT);
@@ -48,7 +75,7 @@ void DesenhaLinhaDaMetade(){
         glEnd();
     glPopAttrib(); 
 }
-void DesenhaLinhaDeTiro(Jogador jogador){
+void DesenhaLinhaDeTiro(Atirador jogador){
     // glPushAttrib(GL_LINE_BIT);
     //     glLineWidth(3.0);
     //     glEnable(GL_LINE_STIPPLE);
@@ -76,11 +103,12 @@ void display(void)
     jogador->Desenha();
 
 
-    for (size_t i = 0; i < tiros.size(); i++){
-        if (tiros[i]) tiros[i]->Desenha();
+    for (size_t i = 0; i < tirosJogador.size(); i++){
+        if (tirosJogador[i]) tirosJogador[i]->Desenha();
     }
 
-    //  alvo.Desenha();
+    for(int bb=0; bb<cfg.jogo.barril.maximoSimultaneo; bb++)
+        if(barris[bb]) barris[bb]->Desenha();
 
     //  ImprimePlacar(5-ViewingWidth/2,5-ViewingHeight/2);
 
@@ -145,8 +173,8 @@ void idle(void)
     static GLdouble antes = glutGet(GLUT_ELAPSED_TIME);
     GLdouble agora, dt;
     agora = glutGet(GLUT_ELAPSED_TIME);
-
     dt = agora - antes;
+    if (dt==0) return; // Isso pode acontecer quando o cálculo é muito rápido
     antes = agora;
 
 
@@ -159,15 +187,26 @@ void idle(void)
 
 
     // Trata mouse
-    if(cursor_x-last_cursor_x < 0) jogador->Mira(dt);
-    if(cursor_x-last_cursor_x > 0) jogador->Mira(-dt);
+    jogador->Mira(cursor_x - last_cursor_x, dt);
+    // if(cursor_x-last_cursor_x > 0) jogador->Mira(cursor_x - last_cursor_x, dt);
 
-
-    //Trata os tiro
-    for (size_t i = 0; i < tiros.size(); i++){
-        if (tiros[i]) {
-            tiros[i]->Move(dt);
-            if (!tiros[i]->Valido()) { delete tiros[i]; tiros[i] = NULL; }
+    // O barril pode ter sido destruído. A função de 
+    // rolar tem que estar dentro do tratamento adequado
+    for(int bb=0; bb<cfg.jogo.barril.maximoSimultaneo; bb++){
+        if(barris[bb]){
+            barris[bb]->Rola(dt);
+            if(barrisForaDaArena[bb]){
+                delete barris[bb];
+                barris[bb]=NULL;
+                barrisForaDaArena[bb]=false;
+            }
+        }
+    }
+    //Trata os tiros
+    for (size_t i = 0; i < tirosJogador.size(); i++){
+        if (tirosJogador[i]) {
+            tirosJogador[i]->Move(dt);
+            if (!tirosJogador[i]->Valido()) { delete tirosJogador[i]; tirosJogador[i] = NULL; }
         }
     }
     
@@ -179,7 +218,7 @@ void mouse(int button, int state, int x, int y){
         if (state==0){  // Botão apertado
             if(!apertado){
                 apertado = true;
-                jogador->Atira(tiros);
+                jogador->Atira(tirosJogador);
             }
         } else {
             if(apertado) apertado = false;
@@ -213,15 +252,25 @@ int main(int argc, char** argv)
     glutDisplayFunc(display); 
     glutKeyboardFunc(keyPress);
     glutKeyboardUpFunc(keyUp);
-    glutPassiveMotionFunc(passiveMotion);   // Trata o cursor do mouse
+    // Registra a função passiveMotion como passiva e ativa, para a lógica 
+    // enquanto o mouse estiver apertado; Isso corrige um bug que fazia a arma
+    // Ser jogada para um lado quando o jogador clicava.
+    glutPassiveMotionFunc(passiveMotion);
+    glutMotionFunc(passiveMotion);
+    glutMouseFunc(mouse);                   // Trata os cliques do mouse
+
     glutIdleFunc(idle);                     // Atualiza o estado do mundo
-    glutMouseFunc(mouse);
 
 
 
     // Configurações iniciais do mundo
-    jogador = new Jogador(cfg, colisaoArena_jogador,
-        x0_jogador(), y0_jogador());
+    srand((unsigned)time(NULL));    //Pega um seed "aleatório"
+
+    jogador = new Atirador(cfg, colisaoArena_jogador,
+        x0_jogador(), y0_jogador(), cfg.cinematica.jogador.velocidadeMovimento,
+        90, 1);
+    barris[0] = new Barril(cfg, colisaoArena_barril,
+        x0_barril(),y0_barril(), 0);
     ResetKeyStatus();
 
     // Loop principal ==========================================================

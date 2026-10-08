@@ -1,4 +1,4 @@
-#include "jogador.h"
+#include "atirador.h"
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -7,7 +7,7 @@
 #include "funcoesaux.h"
 
 #pragma region  // Funções de desenho
-Vec2 Jogador::p0arma(){
+Vec2 Atirador::p0arma(){
     // Tome como p0 a origem do SC da arma, que, no SC de coordenadas do jogador, é o centro de rotação da mira
     Vec2 p0 = {
         escala * (cfg.geometriaBase.jogadores.larguraArma/2.0 + cfg.geometriaBase.jogadores.raioCabeca),
@@ -35,11 +35,10 @@ Vec2 Jogador::p0arma(){
     Vec2 ret = MultiplicaMatrizEsq2d(transl,aux);
     return ret;
 }
-Vec2 Jogador::p1arma(){
+Vec2 Atirador::p1arma(){
     // Tome como p1 a ponta da arma, no SC da arma
     Vec2 p1 = {
-        escala * (cfg.geometriaBase.jogadores.comprimentoArma/2.0 + cfg.geometriaBase.jogadores.posyArma),
-        0,
+escala * (cfg.geometriaBase.jogadores.comprimentoArma + cfg.geometriaBase.jogadores.posyArma),        0,
         1 // ponto, não vetor
     };
 
@@ -67,7 +66,7 @@ Vec2 Jogador::p1arma(){
     return ret;
 }
 template <class Cor>
-void Jogador::DesenhaCirc(GLdouble radius, const Cor& cor) {
+void Atirador::DesenhaCirc(GLdouble radius, const Cor& cor) {
     int NumPontos = 20;
     glColor3f(cor.R, cor.G, cor.B);
     glPointSize(2);
@@ -78,7 +77,7 @@ void Jogador::DesenhaCirc(GLdouble radius, const Cor& cor) {
     glEnd();
 }
 template <class Cor>
-void Jogador::DesenhaRect(GLdouble height, GLdouble width, const Cor& cor)
+void Atirador::DesenhaRect(GLdouble height, GLdouble width, const Cor& cor)
     {
     glColor3f(cor.R, cor.G, cor.B);
     glBegin(GL_POLYGON);
@@ -88,7 +87,7 @@ void Jogador::DesenhaRect(GLdouble height, GLdouble width, const Cor& cor)
         glVertex3f ( width/2.0, -height/2.0, 0);
     glEnd();
 }
-void Jogador::Desenha(){
+void Atirador::Desenha(){
     GLfloat dx, dy, w, h, r;
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -132,14 +131,14 @@ void Jogador::Desenha(){
 #pragma endregion // Funções de desenho
 
 // Funções de controle
-void Jogador::Anda(GLdouble dt){
-    GLdouble vel = cfg.cinematica.jogador.velocidadeMovimento;
+void Atirador::Anda(GLdouble dt){
+    GLdouble vel = gVel;
     GLdouble desl = dt * vel;
 
     gPos_x += desl * cos(gTheta_jogador*M_PI/180);
     gPos_y += desl * sin(gTheta_jogador*M_PI/180);
 
-    dist_perna += desl;
+    dist_perna += desl*fatorVelAnimPernas*2;
     if(dist_perna > cfg.geometriaBase.jogadores.comprimentoPernas){
         perna_empurrando = !perna_empurrando;
         dist_perna = -cfg.geometriaBase.jogadores.comprimentoPernas;
@@ -150,13 +149,13 @@ void Jogador::Anda(GLdouble dt){
     }
 
     if(perna_empurrando==0){    // perna esquerda empurrando
-        delta_perna_esq -= desl/2.0;
-        delta_perna_dir += desl/2.0;
+        delta_perna_esq -= desl*fatorVelAnimPernas;
+        delta_perna_dir += desl*fatorVelAnimPernas;
     } else {                    // perna direita empurrando
-        delta_perna_esq += desl/2.0;
-        delta_perna_dir -= desl/2.0;
+        delta_perna_esq += desl*fatorVelAnimPernas;
+        delta_perna_dir -= desl*fatorVelAnimPernas;
     }
-    GLdouble lim = cfg.geometriaBase.jogadores.comprimentoPernas/2.0;
+    GLdouble lim = cfg.geometriaBase.jogadores.comprimentoPernas / 2.0;
     if(delta_perna_dir > lim) delta_perna_dir = lim;
     if(delta_perna_dir < -lim) delta_perna_dir = -lim;
     if(delta_perna_esq > lim) delta_perna_esq = lim;
@@ -166,13 +165,17 @@ void Jogador::Anda(GLdouble dt){
 
 
 }
-void Jogador::Gira(GLdouble dt){
+void Atirador::Gira(GLdouble dt){
     GLdouble vel = cfg.cinematica.jogador.velocidadeGiro;
     gTheta_jogador += vel * dt;
 }
-void Jogador::Mira(GLdouble dt){
-    GLdouble vel = cfg.cinematica.jogador.velocidadeMira;
-    GLdouble theta = gTheta_arma + vel * dt;
+void Atirador::Mira(GLdouble dx, GLdouble dt){
+    GLdouble passoMax = cfg.cinematica.jogador.velocidadeMira * dt;
+    GLdouble delta = - dx;  // O sinal invertido compensa movimento em +x virando giro em -DeltaTheta
+    if (delta >  passoMax) delta =  passoMax;
+    if (delta < -passoMax) delta = -passoMax;
+
+    GLdouble theta = gTheta_arma + delta;
     GLdouble limite;
 
     limite = 90 + cfg.cinematica.jogador.aberturaAngular/2.0;
@@ -181,7 +184,7 @@ void Jogador::Mira(GLdouble dt){
     if(theta<limite) theta = limite;
     gTheta_arma = theta;
 }
-void Jogador::Atira(std::vector<Tiro*> &tiros){
+void Atirador::Atira(std::vector<Tiro*> &tiros){
     Vec2 p1 = this->p1arma();
     Vec2 dir = Normaliza(p1 - this->p0arma());
     GLdouble vel = cfg.cinematica.tiros.velocidadeTiro;

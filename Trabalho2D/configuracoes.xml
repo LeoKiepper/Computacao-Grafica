@@ -1,7 +1,7 @@
 <jogo>
   <inimigo tirosPorSegundo="..." />
-  <tiros tirosSimultaneosPermitidos="5" />
-  <barril resistencia="..." nParaGanhar="..." />
+  <tiros tirosJogadorSimultaneosPermitidos="5" />
+  <barril resistencia="..." nParaGanhar="..." maximoSimultaneo="3"/>
   <outros pensar="..." emAlgo="..."/>
 </jogo>
 
@@ -10,15 +10,15 @@
 <!-- calculada programaticamente fazendo -->
 <!-- geometria.jogadores.raioCabeca / geometriaBase.jogadores.raioCabeca -->
 <geometriaBase>
-  <arena  altura="500" largura="200"/>
+  <arena  altura="600" largura="300"/>
   <jogadores raioCabeca="30" larguraArma="20" comprimentoArma="110" posyArma="-30" comprimentoPernas="50" larguraPernas="15"/>
-  <barril altura="..." largura="..."/>
+  <barril altura="150" diametro="80"/>
 </geometriaBase>
 <geometria>
   <jogadores raioCabeca="15"/>
 </geometria>
 <cinematica>
-  <jogador velocidadeMovimento="0.25" velocidadeGiro="0.25" velocidadeMira="0.2" aberturaAngular="60"/>
+  <jogador velocidadeMovimento="0.10" velocidadeGiro="0.25" velocidadeMira="0.2" aberturaAngular="60"/>
   <tiros velocidadeTiro="0.9"/>
   <barril velocidade="0.1"/>
 </cinematica>

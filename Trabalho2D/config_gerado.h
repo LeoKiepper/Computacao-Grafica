@@ -9,11 +9,12 @@ struct Config {
             std::string tirosPorSegundo{};
         } inimigo;
         struct tiros_t {
-            double tirosSimultaneosPermitidos{};
+            double tirosJogadorSimultaneosPermitidos{};
         } tiros;
         struct barril_t {
             std::string resistencia{};
             std::string nParaGanhar{};
+            double maximoSimultaneo{};
         } barril;
         struct outros_t {
             std::string pensar{};
@@ -34,8 +35,8 @@ struct Config {
             double larguraPernas{};
         } jogadores;
         struct barril_t {
-            std::string altura{};
-            std::string largura{};
+            double altura{};
+            double diametro{};
         } barril;
     } geometriaBase;
     struct geometria_t {

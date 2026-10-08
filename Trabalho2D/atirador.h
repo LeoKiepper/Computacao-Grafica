@@ -1,5 +1,5 @@
-#ifndef JOGADOR_H
-#define	JOGADOR_H
+#ifndef ATIRADOR_H
+#define	ATIRADOR_H
 #include <GL/gl.h>
 #include "config.h"
 #include <math.h>
@@ -7,14 +7,16 @@
 #include <vector>
 #include "tiro.h"
 
-typedef void (*ColisaoArena)(GLdouble& x, GLdouble& y);
 
-class Jogador{
+class Atirador{
+    public:
+        using ColisaoArena = void (*)(GLdouble& x, GLdouble& y);
     private:
         const Config& cfg;
         ColisaoArena limiteArena = NULL;
         GLdouble gPos_x;
         GLdouble gPos_y;
+        GLdouble gVel;
         GLdouble gTheta_jogador;
         GLdouble gTheta_arma;
         int perna_empurrando = 0;
@@ -22,7 +24,7 @@ class Jogador{
         GLdouble delta_perna_dir = 0;
         GLdouble dist_perna = 0;
         GLdouble escala = 1;
-        
+        GLdouble fatorVelAnimPernas;
     template <class Cor>
     void DesenhaCirc(GLdouble radius, 
         const Cor& cor);
@@ -32,15 +34,17 @@ class Jogador{
 
 
     public:
-        Jogador(const Config& cfg, ColisaoArena limiteArena, GLdouble x0, GLdouble y0)
-            : cfg(cfg), limiteArena(limiteArena), gPos_x(x0), gPos_y(y0),
-            gTheta_jogador(90), gTheta_arma(90) {
+        Atirador(const Config& cfg, ColisaoArena limiteArena, GLdouble x0, GLdouble y0, GLdouble vel, GLdouble Direcao0, GLdouble fatorVelAnimPernas)
+            : cfg(cfg), limiteArena(limiteArena), 
+            gPos_x(x0), gPos_y(y0), gVel(vel), 
+            gTheta_jogador(Direcao0), gTheta_arma(Direcao0),
+            fatorVelAnimPernas(fatorVelAnimPernas) {
                 this->escala = cfg.geometria.jogadores.raioCabeca / cfg.geometriaBase.jogadores.raioCabeca;
             }
         void Desenha();
         void Anda(GLdouble dt);
         void Gira(GLdouble dt);
-        void Mira(GLdouble dt);
+        void Mira(GLdouble dx,GLdouble dt);
         void Atira(std::vector<Tiro*> &tiros);
         GLdouble posX(){return gPos_x;};
         GLdouble posY(){return gPos_y;};
