@@ -25,8 +25,8 @@ class Barril{
                 Atirador::ColisaoArena semColisao = [](auto&...){};
 
                 if(rand() % 2){ // Sorteia se esse barril vem com um inimigo, 50% de chance
-                    // Cria um inimigo que mexe as pernas na mesma do barril 
-                    // velocidade, no sentido contrário ao movimento.
+                    // Cria um inimigo que mexe as pernas na mesma velocidade 
+                    // do barril, no sentido contrário ao movimento.
                     // A superfície de cima do barril se move com velocidade 
                     // igual a 2 * velBarril com respeito ao SC_mundo. 
                     // Para o inimigo ter uma velocidade resultante igual a 
