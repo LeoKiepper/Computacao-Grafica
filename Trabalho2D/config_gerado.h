@@ -3,6 +3,12 @@
 #define CONFIG_GERADO_H
 #include <string>
 
+struct Cor {
+    double R{};
+    double G{};
+    double B{};
+};
+
 struct Config {
     struct jogo_t {
         struct inimigo_t {
@@ -58,36 +64,12 @@ struct Config {
         } barril;
     } cinematica;
     struct cores_t {
-        struct arena_t {
-            double R{};
-            double G{};
-            double B{};
-        } arena;
-        struct arma_t {
-            double R{};
-            double G{};
-            double B{};
-        } arma;
-        struct cabecaJogador_t {
-            double R{};
-            double G{};
-            double B{};
-        } cabecaJogador;
-        struct cabecaInimigo_t {
-            double R{};
-            double G{};
-            double B{};
-        } cabecaInimigo;
-        struct pernas_t {
-            double R{};
-            double G{};
-            double B{};
-        } pernas;
-        struct barril_t {
-            double R{};
-            double G{};
-            double B{};
-        } barril;
+        Cor arena;
+        Cor arma;
+        Cor cabecaJogador;
+        Cor cabecaInimigo;
+        Cor pernas;
+        Cor barril;
     } cores;
 };
 

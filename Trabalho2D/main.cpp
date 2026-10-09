@@ -268,7 +268,7 @@ int main(int argc, char** argv)
 
     jogador = new Atirador(cfg, colisaoArena_jogador,
         x0_jogador(), y0_jogador(), cfg.cinematica.jogador.velocidadeMovimento,
-        90, 1);
+        90, 1, cfg.cores.cabecaJogador);
     barris[0] = new Barril(cfg, colisaoArena_barril,
         x0_barril(),y0_barril(), 0);
     ResetKeyStatus();

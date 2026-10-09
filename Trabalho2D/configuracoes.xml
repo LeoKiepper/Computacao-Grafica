@@ -18,7 +18,7 @@
   <jogadores raioCabeca="15"/>
 </geometria>
 <cinematica>
-  <jogador velocidadeMovimento="0.05" velocidadeGiro="0.20" velocidadeMira="0.2" aberturaAngular="60"/>
+  <jogador velocidadeMovimento="0.15" velocidadeGiro="0.20" velocidadeMira="0.2" aberturaAngular="60"/>
   <tiros velocidadeTiro="0.9"/>
   <barril velocidade="0.1"/>
 </cinematica>

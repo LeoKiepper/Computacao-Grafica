@@ -2,7 +2,6 @@
 #include <GL/gl.h>
 #include <stdlib.h>
 
-template <class Cor>
 void Barril::DesenhaRect(GLdouble height, GLdouble width, const Cor& cor)
     {
     glColor3f(cor.R, cor.G, cor.B);

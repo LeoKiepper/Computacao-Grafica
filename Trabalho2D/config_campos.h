@@ -4,6 +4,7 @@
 #define CONFIG_CAMPOS_H
 #include "config_gerado.h"
 
+template <class V> void campos(Cor& s, V& v) { v("R", s.R); v("G", s.G); v("B", s.B); }
 template <class V> void campos(Config& s, V& v) { v("jogo", s.jogo); v("geometriaBase", s.geometriaBase); v("geometria", s.geometria); v("cinematica", s.cinematica); v("cores", s.cores); }
 template <class V> void campos(Config::jogo_t& s, V& v) { v("inimigo", s.inimigo); v("tiros", s.tiros); v("barril", s.barril); v("outros", s.outros); }
 template <class V> void campos(Config::jogo_t::inimigo_t& s, V& v) { v("tirosPorSegundo", s.tirosPorSegundo); }
@@ -21,11 +22,5 @@ template <class V> void campos(Config::cinematica_t::jogador_t& s, V& v) { v("ve
 template <class V> void campos(Config::cinematica_t::tiros_t& s, V& v) { v("velocidadeTiro", s.velocidadeTiro); }
 template <class V> void campos(Config::cinematica_t::barril_t& s, V& v) { v("velocidade", s.velocidade); }
 template <class V> void campos(Config::cores_t& s, V& v) { v("arena", s.arena); v("arma", s.arma); v("cabecaJogador", s.cabecaJogador); v("cabecaInimigo", s.cabecaInimigo); v("pernas", s.pernas); v("barril", s.barril); }
-template <class V> void campos(Config::cores_t::arena_t& s, V& v) { v("R", s.R); v("G", s.G); v("B", s.B); }
-template <class V> void campos(Config::cores_t::arma_t& s, V& v) { v("R", s.R); v("G", s.G); v("B", s.B); }
-template <class V> void campos(Config::cores_t::cabecaJogador_t& s, V& v) { v("R", s.R); v("G", s.G); v("B", s.B); }
-template <class V> void campos(Config::cores_t::cabecaInimigo_t& s, V& v) { v("R", s.R); v("G", s.G); v("B", s.B); }
-template <class V> void campos(Config::cores_t::pernas_t& s, V& v) { v("R", s.R); v("G", s.G); v("B", s.B); }
-template <class V> void campos(Config::cores_t::barril_t& s, V& v) { v("R", s.R); v("G", s.G); v("B", s.B); }
 
 #endif

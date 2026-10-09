@@ -65,7 +65,6 @@ escala * (cfg.geometriaBase.jogadores.comprimentoArma + cfg.geometriaBase.jogado
     Vec2 ret = MultiplicaMatrizEsq2d(transl2,aux2);
     return ret;
 }
-template <class Cor>
 void Atirador::DesenhaCirc(GLdouble radius, const Cor& cor) {
     int NumPontos = 20;
     glColor3f(cor.R, cor.G, cor.B);
@@ -76,7 +75,6 @@ void Atirador::DesenhaCirc(GLdouble radius, const Cor& cor) {
         }
     glEnd();
 }
-template <class Cor>
 void Atirador::DesenhaRect(GLdouble height, GLdouble width, const Cor& cor)
     {
     glColor3f(cor.R, cor.G, cor.B);
@@ -112,7 +110,7 @@ void Atirador::Desenha(){
             glPopMatrix();
         glPopMatrix();
         r = escala * cfg.geometriaBase.jogadores.raioCabeca;
-        DesenhaCirc(r, cfg.cores.cabecaJogador);
+        DesenhaCirc(r, corCabeca);
         glPushMatrix();
             // Desloca de uma quantidade no eixo X do SC do jogador, que é o mesmo do mundo
             dx = escala * (cfg.geometriaBase.jogadores.larguraArma/2.0 + cfg.geometriaBase.jogadores.raioCabeca);

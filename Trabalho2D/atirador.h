@@ -25,20 +25,19 @@ class Atirador{
         GLdouble distMarcha = 0;
         GLdouble escala = 1;
         GLdouble fatorVelAnimPernas;
-    template <class Cor>
+        Cor corCabeca;
     void DesenhaCirc(GLdouble radius, 
         const Cor& cor);
-    template <class Cor>
     void DesenhaRect(GLdouble height, GLdouble width, 
         const Cor& cor);
 
 
     public:
-        Atirador(const Config& cfg, ColisaoArena limiteArena, GLdouble x0, GLdouble y0, GLdouble vel, GLdouble Direcao0, GLdouble fatorVelAnimPernas)
+        Atirador(const Config& cfg, ColisaoArena limiteArena, GLdouble x0, GLdouble y0, GLdouble vel, GLdouble Direcao0, GLdouble fatorVelAnimPernas, Cor corCabeca)
             : cfg(cfg), limiteArena(limiteArena), 
             gPos_x(x0), gPos_y(y0), gVel(vel), 
             gTheta_jogador(Direcao0), gTheta_arma(Direcao0),
-            fatorVelAnimPernas(fatorVelAnimPernas) {
+            fatorVelAnimPernas(fatorVelAnimPernas), corCabeca(corCabeca) {
                 this->escala = cfg.geometria.jogadores.raioCabeca / cfg.geometriaBase.jogadores.raioCabeca;
             }
         void Desenha();

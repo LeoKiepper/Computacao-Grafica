@@ -13,12 +13,32 @@ static const char* tipo(const char* valor)
     return "std::string";
 }
 
+static bool ehCor(TiXmlElement* e)
+{
+    if (e->FirstChildElement()) return false;   // uma cor nao tem sub-elementos
+    bool temR = false, temG = false, temB = false;
+    int n = 0;
+    for (TiXmlAttribute* a = e->FirstAttribute(); a; a = a->Next(), ++n) {
+        std::string nome = a->Name();
+        if      (nome == "R") temR = true;
+        else if (nome == "G") temG = true;
+        else if (nome == "B") temB = true;
+        else return false;                      // atributo estranho: nao e cor
+        if (std::string(tipo(a->Value())) != "double") return false;
+    }
+    return n == 3 && temR && temG && temB;
+}
+
 static void corpo(FILE* out, TiXmlNode* no, const std::string& ind)
 {
     if (TiXmlElement* e = no->ToElement())
         for (TiXmlAttribute* a = e->FirstAttribute(); a; a = a->Next())
             fprintf(out, "%s%s %s{};\n", ind.c_str(), tipo(a->Value()), a->Name());
     for (TiXmlElement* c = no->FirstChildElement(); c; c = c->NextSiblingElement()) {
+        if (ehCor(c)) {                         // nos R/G/B viram o tipo unico Cor
+            fprintf(out, "%sCor %s;\n", ind.c_str(), c->Value());
+            continue;
+        }
         fprintf(out, "%sstruct %s_t {\n", ind.c_str(), c->Value());
         corpo(out, c, ind + "    ");
         fprintf(out, "%s} %s;\n", ind.c_str(), c->Value());
@@ -37,7 +57,8 @@ static void funcoes(FILE* out, TiXmlNode* no, const std::string& tipoStruct)
             tipoStruct.c_str(), chamadas.c_str());
 
     for (TiXmlElement* c = no->FirstChildElement(); c; c = c->NextSiblingElement())
-        funcoes(out, c, tipoStruct + "::" + c->Value() + "_t");
+        if (!ehCor(c))                          // Cor tem um campos() proprio, emitido uma vez
+            funcoes(out, c, tipoStruct + "::" + c->Value() + "_t");
 }
 
 int main(int argc, char** argv)
@@ -55,6 +76,7 @@ int main(int argc, char** argv)
     FILE* structs = fopen(argv[2], "w");
     fprintf(structs, "// GERADO a partir de %s por gerador_config. Nao edite.\n", argv[1]);
     fprintf(structs, "#ifndef CONFIG_GERADO_H\n#define CONFIG_GERADO_H\n#include <string>\n\n");
+    fprintf(structs, "struct Cor {\n    double R{};\n    double G{};\n    double B{};\n};\n\n");
     fprintf(structs, "struct Config {\n");
     corpo(structs, &doc, "    ");   // the file's top-level elements are Config's fields
     fprintf(structs, "};\n\n#endif\n");
@@ -64,6 +86,7 @@ int main(int argc, char** argv)
     fprintf(campos, "// GERADO a partir de %s por gerador_config. Nao edite.\n", argv[1]);
     fprintf(campos, "// Usado apenas por config.cpp para preencher Config.\n");
     fprintf(campos, "#ifndef CONFIG_CAMPOS_H\n#define CONFIG_CAMPOS_H\n#include \"%s\"\n\n", argv[2]);
+    fprintf(campos, "template <class V> void campos(Cor& s, V& v) { v(\"R\", s.R); v(\"G\", s.G); v(\"B\", s.B); }\n");
     funcoes(campos, &doc, "Config");
     fprintf(campos, "\n#endif\n");
     fclose(campos);

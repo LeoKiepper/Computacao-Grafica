@@ -35,11 +35,11 @@ class Barril{
                     // barril com velocidade igual a - velBarril
                     inimigo = new Atirador(cfg,semColisao,x0,y0,
                         cfg.cinematica.barril.velocidade,-90,
-                        -1);
+                        -1,
+                        cfg.cores.cabecaInimigo);
                 }
         };
         ~Barril(){ delete inimigo;};
-        template <class Cor>
         void DesenhaRect(GLdouble height, GLdouble width, const Cor& cor);
         void Desenha();
         void Rola(GLdouble dt);
