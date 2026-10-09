@@ -22,7 +22,7 @@ class Atirador{
         int perna_empurrando = 0;
         GLdouble delta_perna_esq = 0;
         GLdouble delta_perna_dir = 0;
-        GLdouble dist_perna = 0;
+        GLdouble distMarcha = 0;
         GLdouble escala = 1;
         GLdouble fatorVelAnimPernas;
     template <class Cor>

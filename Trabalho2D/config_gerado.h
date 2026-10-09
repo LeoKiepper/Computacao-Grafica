@@ -12,8 +12,7 @@ struct Config {
             double tirosJogadorSimultaneosPermitidos{};
         } tiros;
         struct barril_t {
-            std::string resistencia{};
-            std::string nParaGanhar{};
+            double tempoMinimoEntreBarris_s{};
             double maximoSimultaneo{};
         } barril;
         struct outros_t {

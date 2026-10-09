@@ -8,7 +8,7 @@ template <class V> void campos(Config& s, V& v) { v("jogo", s.jogo); v("geometri
 template <class V> void campos(Config::jogo_t& s, V& v) { v("inimigo", s.inimigo); v("tiros", s.tiros); v("barril", s.barril); v("outros", s.outros); }
 template <class V> void campos(Config::jogo_t::inimigo_t& s, V& v) { v("tirosPorSegundo", s.tirosPorSegundo); }
 template <class V> void campos(Config::jogo_t::tiros_t& s, V& v) { v("tirosJogadorSimultaneosPermitidos", s.tirosJogadorSimultaneosPermitidos); }
-template <class V> void campos(Config::jogo_t::barril_t& s, V& v) { v("resistencia", s.resistencia); v("nParaGanhar", s.nParaGanhar); v("maximoSimultaneo", s.maximoSimultaneo); }
+template <class V> void campos(Config::jogo_t::barril_t& s, V& v) { v("tempoMinimoEntreBarris_s", s.tempoMinimoEntreBarris_s); v("maximoSimultaneo", s.maximoSimultaneo); }
 template <class V> void campos(Config::jogo_t::outros_t& s, V& v) { v("pensar", s.pensar); v("emAlgo", s.emAlgo); }
 template <class V> void campos(Config::geometriaBase_t& s, V& v) { v("arena", s.arena); v("jogadores", s.jogadores); v("barril", s.barril); }
 template <class V> void campos(Config::geometriaBase_t::arena_t& s, V& v) { v("altura", s.altura); v("largura", s.largura); }

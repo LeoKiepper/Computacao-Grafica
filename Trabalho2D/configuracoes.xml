@@ -1,7 +1,7 @@
 <jogo>
   <inimigo tirosPorSegundo="..." />
   <tiros tirosJogadorSimultaneosPermitidos="5" />
-  <barril resistencia="..." nParaGanhar="..." maximoSimultaneo="3"/>
+  <barril tempoMinimoEntreBarris_s="5" maximoSimultaneo="3"/>
   <outros pensar="..." emAlgo="..."/>
 </jogo>
 
@@ -18,7 +18,7 @@
   <jogadores raioCabeca="15"/>
 </geometria>
 <cinematica>
-  <jogador velocidadeMovimento="0.10" velocidadeGiro="0.25" velocidadeMira="0.2" aberturaAngular="60"/>
+  <jogador velocidadeMovimento="0.05" velocidadeGiro="0.20" velocidadeMira="0.2" aberturaAngular="60"/>
   <tiros velocidadeTiro="0.9"/>
   <barril velocidade="0.1"/>
 </cinematica>

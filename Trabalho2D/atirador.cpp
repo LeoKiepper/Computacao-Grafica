@@ -138,32 +138,61 @@ void Atirador::Anda(GLdouble dt){
     gPos_x += desl * cos(gTheta_jogador*M_PI/180);
     gPos_y += desl * sin(gTheta_jogador*M_PI/180);
 
-    dist_perna += desl*fatorVelAnimPernas*2;
-    if(dist_perna > cfg.geometriaBase.jogadores.comprimentoPernas){
-        perna_empurrando = !perna_empurrando;
-        dist_perna = -cfg.geometriaBase.jogadores.comprimentoPernas;
-    }
-    if(dist_perna < -cfg.geometriaBase.jogadores.comprimentoPernas){
-        perna_empurrando = !perna_empurrando;
-        dist_perna = cfg.geometriaBase.jogadores.comprimentoPernas;
-    }
+    #pragma region // Animação das pernas
+        // A origem do SC de cada retângulo da perna é posicionada no seu centro
+        // Cada retângulo é posicionado pela sua âncora num ponto sobre o diâmetro
+        // do círculo da cabeça. Para ser posicionada de modo que o "pé" fique 
+        // parado, cada perna tem que ser desenhada deslocada ortogonalmente
+        // a esse diâmetro de uma distância específica, que muda com o passar do tempo.
 
-    if(perna_empurrando==0){    // perna esquerda empurrando
-        delta_perna_esq -= desl*fatorVelAnimPernas;
-        delta_perna_dir += desl*fatorVelAnimPernas;
-    } else {                    // perna direita empurrando
-        delta_perna_esq += desl*fatorVelAnimPernas;
-        delta_perna_dir -= desl*fatorVelAnimPernas;
-    }
-    GLdouble lim = cfg.geometriaBase.jogadores.comprimentoPernas / 2.0;
-    if(delta_perna_dir > lim) delta_perna_dir = lim;
-    if(delta_perna_dir < -lim) delta_perna_dir = -lim;
-    if(delta_perna_esq > lim) delta_perna_esq = lim;
-    if(delta_perna_esq < -lim) delta_perna_esq = -lim;
+        // A forma de onda dessa distância para uma perna tem que ser uma onda triangular,
+        // De modo que a inclinação de cada fase seja, em módulo, igual à velocidade do 
+        // atirador
+
+        //   0 ────────── 1A ────────── 2A ────────── 3A ────────── 4A
+        //   |   fase 1    |    fase 2   |   fase 3    |    fase 4   |
+        //   |  esq apoia  |  dir apoia  |  dir apoia  |  esq apoia  |
+        //   | delta_esq + | delta_esq + | delta_esq - | delta_esq - |
+
+        // Busca-se uma função em domínio modular que leva a distância percorrida pelo 
+        // atirador, no SC_mundo, ao delta de uma perna. A da outra perna é derivável 
+        // a partir daí.
+
+        // No SC do atirador, a distância percorrida em um ciclo completo (portanto o
+        // período, já que a função é parametrizada em distância percorrida) é o dobro do
+        // comprimento de uma perna. Então, um quarto de ciclo é:
+        const GLdouble amplitude = cfg.geometriaBase.jogadores.comprimentoPernas/2.0;
+        // Como não se deseja escorregamento, então a velocidade do pé, em módulo, tem 
+        // que ser idêntica ao do atirador, e a inclinação da onda tem que ser 1.
+        // Portanto, a amplitude da onda é numericamente igual à distância percorrida em
+        // um quarto de ciclo.
+
+        // distMarcha é a distância acumulada no SC do atirador, crescendo sem limite
+        // Precisa ser corrigido pela escala, já que envolve movimento de componentes
+        // afetados por ela
+        distMarcha += desl * fatorVelAnimPernas / escala;
+
+        // fmod é o resto da divisão x/y, em float
+        // p mapea distMarcha para álgebra modular de um ciclo = 4*amplitude
+        GLdouble p = fmod(distMarcha, 4*amplitude);
+        if (p < 0) p += 4*amplitude; // Remapeia o domínio negativo. Sobra (0, 4*amplitude]
+
+        // Atribua a primeira metade do ciclo à perna esquerda empurrando
+        bool pernaEsqEmpurrando = (p < 2*amplitude);
+        GLdouble distNaFaseAtual = pernaEsqEmpurrando ? p : p - 2*amplitude;
+
+        // Calcule o delta do qual cada perna tem que ser que ser desenhada. Como as 
+        // ondas de delta de cada perna são defasadas de meio ciclo, então pode-se
+        // apenas inverter o sinal
+        GLdouble delta_pernaDeApoio   =  amplitude - distNaFaseAtual;
+        GLdouble delta_pernaEmBalanco = -delta_pernaDeApoio;
+
+        delta_perna_esq  = pernaEsqEmpurrando ? delta_pernaDeApoio   : delta_pernaEmBalanco;
+        delta_perna_dir  = pernaEsqEmpurrando ? delta_pernaEmBalanco : delta_pernaDeApoio;
+        perna_empurrando = pernaEsqEmpurrando ? 0 : 1;
+    #pragma endregion
 
     if (limiteArena) limiteArena(gPos_x, gPos_y);
-
-
 }
 void Atirador::Gira(GLdouble dt){
     GLdouble vel = cfg.cinematica.jogador.velocidadeGiro;

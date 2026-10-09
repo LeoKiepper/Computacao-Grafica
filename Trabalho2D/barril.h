@@ -25,15 +25,17 @@ class Barril{
                 Atirador::ColisaoArena semColisao = [](auto&...){};
 
                 if(rand() % 2){ // Sorteia se esse barril vem com um inimigo, 50% de chance
-                    // Cria um inimigo que mexe as pernas no dobro da 
+                    // Cria um inimigo que mexe as pernas na mesma do barril 
                     // velocidade, no sentido contrário ao movimento.
-                    // Precisa ser assim porque, no SC do inimigo, a 
-                    // superfície do barril se move para trás, com o 
-                    // dobro da velocidade de movimento do barril. 
-                    // Qualquer outra velocidade faria com que o inimigo
-                    // visse, o barril escorregando no seu SC
+                    // A superfície de cima do barril se move com velocidade 
+                    // igual a 2 * velBarril com respeito ao SC_mundo. 
+                    // Para o inimigo ter uma velocidade resultante igual a 
+                    // + velBarril, também com respeito a SC_mundo, ele tem 
+                    // que se deslocar com respeito à superfície de cima do 
+                    // barril com velocidade igual a - velBarril
                     inimigo = new Atirador(cfg,semColisao,x0,y0,
-                        cfg.cinematica.barril.velocidade,-90,-2);
+                        cfg.cinematica.barril.velocidade,-90,
+                        -1);
                 }
         };
         ~Barril(){ delete inimigo;};
