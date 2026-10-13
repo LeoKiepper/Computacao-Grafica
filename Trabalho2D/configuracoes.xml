@@ -1,7 +1,7 @@
 <jogo>
   <inimigo tirosPorSegundo="..." />
   <tiros tirosJogadorSimultaneosPermitidos="5" />
-  <barril tempoMinimoEntreBarris_s="5" maximoSimultaneo="3"/>
+  <barril tempoMinimoEntreBarris_ms="5000" maximoSimultaneo="3" resistenciaMax="5" resistenciaMin="1"/>
   <outros pensar="..." emAlgo="..."/>
 </jogo>
 
