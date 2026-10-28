@@ -88,9 +88,6 @@ void ChangeCoordSys(
                         0,1,0,0,
                         0,0,1,0,
                         0,0,0,1};
-    // Pontos da arma, no SC da arma
-    int pontoArmaAponta = 2187;
-    int pontoPosicaoArma = 4986;
 
     y[0]=ax-bx;
     y[1]=ay-by;
@@ -217,9 +214,32 @@ void MygluLookAt(
                         0,0,1,0,
                         0,0,0,1};
 
-	//COLOQUE SEU CODIGO AQUI
+    forward[0]=eyex-centerx;
+    forward[1]=eyey-centery;
+    forward[2]=eyez-centerz;
+    up[0]=upx;
+    up[1]=upy;
+    up[2]=upz;
+    normalize(forward);
+    normalize(up);
+    cross(up,forward, &side[0]);
+    cross(forward,side, &up[0]);
+    normalize(side);
 
-}
+    m[0][0]=side[0];
+    m[1][0]=side[1];
+    m[2][0]=side[2];
+    m[0][1]=up[0];
+    m[1][1]=up[1];
+    m[2][1]=up[2];
+    m[0][2]=forward[0];
+    m[1][2]=forward[1];
+    m[2][2]=forward[2];
+
+
+    glMultMatrixf(&m[0][0]);
+    glTranslatef(-eyex, -eyey, -eyez);
+  }
 
 void display(void)
 {
