@@ -92,33 +92,31 @@ void ChangeCoordSys(
     int pontoArmaAponta = 2187;
     int pontoPosicaoArma = 4986;
 
-    z[0]=bx-ax;
-    z[1]=by-ay;
-    z[2]=bz-az;
+    y[0]=ax-bx;
+    y[1]=ay-by;
+    y[2]=az-bz;
     up[0]=upx;
     up[1]=upy;
-    up[2]=-upz;
-    normalize(z);
-    cross(up,z, &x[0]);
-    cross(z,x, &y[0]);
-    normalize(x);
+    up[2]=upz;
     normalize(y);
+    cross(y,up, &x[0]);
+    cross(x,y, &z[0]);
+    normalize(x);
+    normalize(z);
 
     m[0][0]=x[0];
     m[0][1]=x[1];
     m[0][2]=x[2];
-
     m[1][0]=y[0];
     m[1][1]=y[1];
     m[1][2]=y[2];
-
     m[2][0]=z[0];
     m[2][1]=z[1];
     m[2][2]=z[2];
 
-    m[3][0]=ax;
-    m[3][1]=ay;
-    m[3][2]=az;
+    m[3][0]=bx;
+    m[3][1]=by;
+    m[3][2]=bz;
 
     glMultMatrixf(&m[0][0]);
 }
@@ -169,7 +167,7 @@ void DrawAxes(double size)
 //Usar meshlab para obter os pontos abaixo
 int pontoArmaAponta = 4412;   //4421
 int pontoPosicaoArma = 2993;  //2992
-int up[3] = {0, 0, 1};
+int up[3] = {0, 1, 0};
 void desenhaJogador(){
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
