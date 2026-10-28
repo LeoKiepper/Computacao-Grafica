@@ -6,7 +6,7 @@ CXX = g++
 #  -Wall turns on most, but not all, compiler warnings
 CFLAGS  = -g -Wall
 LINKING = -lglut -lGL -lGLU
-TARGET = codigo/*
+TARGET = *
 
 all:
 	$(CXX) $(CFLAGS) -o test $(TARGET).cpp $(LINKING)
