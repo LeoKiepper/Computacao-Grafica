@@ -31,10 +31,10 @@ int soldado_orig = 1;
 void init ()
 {
     glShadeModel (GL_SMOOTH);
-    glEnable(GL_LIGHTING);  
+    glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     glEnable(GL_DEPTH_TEST);
-    
+
     //Carrega as meshes dos arquivos
     soldado.loadMesh("Blender/untitledc1.obj");
     soldado_transf.loadMesh("Blender/untitledc2-transf.obj");
@@ -58,7 +58,7 @@ void reshape (int w, int h)
 //Funcao auxiliar para normalizar um vetor a/|a|
 void normalize(float a[3])
 {
-    double norm = sqrt(a[0]*a[0]+a[1]*a[1]+a[2]*a[2]); 
+    double norm = sqrt(a[0]*a[0]+a[1]*a[1]+a[2]*a[2]);
     a[0] /= norm;
     a[1] /= norm;
     a[2] /= norm;
@@ -72,25 +72,54 @@ void cross(float a[3], float b[3], float out[3])
     out[2] = a[0]*b[1] - a[1]*b[0];
 }
 
-//Aplica a transformacao que coloca o sistema de coordendas local em uma posicao 
+//Aplica a transformacao que coloca o sistema de coordendas local em uma posicao
 //do mundo definida por dois pontos a e b e um vetor up. O ponto b sera a origem,
 //o vetor BA = A - B sera determinara o novo y, o vetor up definira a orientacao
 //do novo z em torno de BA.
-//A matriz de transformacao no opengl eh armazanada transposta: 
+//A matriz de transformacao no opengl eh armazanada transposta:
 //m[4][4] = {Xx, Xy, Xz, 0.0, Yx, Yy, Yz, 0.0, Zx, Zy, Zz, 0.0, Tx, Ty, Tz, 1.0}
 void ChangeCoordSys(
-        GLdouble ax, GLdouble ay, GLdouble az, 
-        GLdouble bx, GLdouble by, GLdouble bz, 
+        GLdouble ax, GLdouble ay, GLdouble az,
+        GLdouble bx, GLdouble by, GLdouble bz,
         GLdouble upx, GLdouble upy, GLdouble upz)
 {
-    float x[3], y[3], z[3];
+    float x[3], y[3], z[3], up[3];
     GLfloat m[4][4] = { 1,0,0,0,
                         0,1,0,0,
                         0,0,1,0,
                         0,0,0,1};
+    // Pontos da arma, no SC da arma
+    int pontoArmaAponta = 2187;
+    int pontoPosicaoArma = 4986;
 
-	//COLOQUE SEU CODIGO AQUI
-    
+    z[0]=bx-ax;
+    z[1]=by-ay;
+    z[2]=bz-az;
+    up[0]=upx;
+    up[1]=upy;
+    up[2]=-upz;
+    normalize(z);
+    cross(up,z, &x[0]);
+    cross(z,x, &y[0]);
+    normalize(x);
+    normalize(y);
+
+    m[0][0]=x[0];
+    m[0][1]=x[1];
+    m[0][2]=x[2];
+
+    m[1][0]=y[0];
+    m[1][1]=y[1];
+    m[1][2]=y[2];
+
+    m[2][0]=z[0];
+    m[2][1]=z[1];
+    m[2][2]=z[2];
+
+    m[3][0]=ax;
+    m[3][1]=ay;
+    m[3][2]=az;
+
     glMultMatrixf(&m[0][0]);
 }
 
@@ -100,7 +129,7 @@ void DrawAxes(double size)
     GLfloat mat_ambient_g[] = { 0.0, 1.0, 0.0, 1.0 };
     GLfloat mat_ambient_b[] = { 0.0, 0.0, 1.0, 1.0 };
     GLfloat no_mat[] = { 0.0, 0.0, 0.0, 1.0 };
-    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, 
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE,
             no_mat);
     glMaterialfv(GL_FRONT, GL_SPECULAR, no_mat);
     glMaterialfv(GL_FRONT, GL_SHININESS, no_mat);
@@ -133,14 +162,14 @@ void DrawAxes(double size)
         glTranslatef(0.5, 0, 0); // put in one end
         glutSolidCube(1.0);
     glPopMatrix();
-    
+
 }
 
 //ALTERE AQUI - SEU CODIGO AQUI
 //Usar meshlab para obter os pontos abaixo
-int pontoArmaAponta = 748;
-int pontoPosicaoArma = 3857;
-int up[3] = {0, -1, 0};
+int pontoArmaAponta = 4412;   //4421
+int pontoPosicaoArma = 2993;  //2992
+int up[3] = {0, 0, 1};
 void desenhaJogador(){
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -154,7 +183,7 @@ void desenhaJogador(){
                 ChangeCoordSys( soldado.vertsPos[pontoArmaAponta].x, soldado.vertsPos[pontoArmaAponta].y, soldado.vertsPos[pontoArmaAponta].z,
                                 soldado.vertsPos[pontoPosicaoArma].x, soldado.vertsPos[pontoPosicaoArma].y, soldado.vertsPos[pontoPosicaoArma].z,
                                 up[0], up[1], up[2]);
-            } 
+            }
         } else {
             soldado_transf.draw();
 
@@ -162,9 +191,9 @@ void desenhaJogador(){
                 ChangeCoordSys( soldado_transf.vertsPos[pontoArmaAponta].x, soldado_transf.vertsPos[pontoArmaAponta].y, soldado_transf.vertsPos[pontoArmaAponta].z,
                                 soldado_transf.vertsPos[pontoPosicaoArma].x, soldado_transf.vertsPos[pontoPosicaoArma].y, soldado_transf.vertsPos[pontoPosicaoArma].z,
                                 up[0], up[1], up[2]);
-            } 
+            }
         }
-        
+
         if (coordsysToggle == 1)
             DrawAxes(10);
         if (armaToggle == 1)
@@ -176,11 +205,11 @@ void desenhaJogador(){
 //tivesse sendo visto da posicao determinada por eye (eyex, eyey, eyez)
 //olhando para center (centerx, centery, centerz)
 //e orientada em torno do vetor direcional por up (upx, upy, upz)
-//A matriz de transformacao no opengl eh armazanada transposta: 
+//A matriz de transformacao no opengl eh armazanada transposta:
 //m[4][4] = {Xx, Xy, Xz, 0.0, Yx, Yy, Yz, 0.0, Zx, Zy, Zz, 0.0, Tx, Ty, Tz, 1.0}
 void MygluLookAt(
-        GLdouble eyex, GLdouble eyey, GLdouble eyez, 
-        GLdouble centerx, GLdouble centery, GLdouble centerz, 
+        GLdouble eyex, GLdouble eyey, GLdouble eyez,
+        GLdouble centerx, GLdouble centery, GLdouble centerz,
         GLdouble upx, GLdouble upy, GLdouble upz)
 {
     float forward[3], side[3], up[3];
@@ -213,14 +242,14 @@ void display(void)
     } else{
         //Limpa a cor com azulado
         glClearColor (1.0, 0.30, 0.30, 0.0);
-        glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);        
+        glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         MygluLookAt(  zoom*sin(camXZAngle*M_PI/180)*cos((camXYAngle*M_PI/180)),
                     zoom*                         sin((camXYAngle*M_PI/180)),
                     zoom*cos(camXZAngle*M_PI/180)*cos((camXYAngle*M_PI/180)),
                     0, 0, 0,
                     0, 1, 0);
     }
-    
+
     desenhaJogador();
 
     //Define e desenha a fonte de luz
@@ -231,9 +260,9 @@ void display(void)
         glColor3f(1.0,1.0,0.0);
         glBegin(GL_POINTS);
             glVertex3f(light_position[0],light_position[1],light_position[2]);
-        glEnd();    
+        glEnd();
     glEnable(GL_LIGHTING);
-    
+
     glutSwapBuffers ();
 }
 
@@ -286,7 +315,7 @@ void mouse_motion(int x, int y)
 {
     if (!buttonDown)
         return;
-    
+
     camXZAngle -= x - lastX;
     camXYAngle += y - lastY;
 

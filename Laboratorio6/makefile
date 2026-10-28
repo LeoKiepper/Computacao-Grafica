@@ -9,7 +9,7 @@ LINKING = -lglut -lGL -lGLU
 TARGET = codigo/*
 
 all:
-	$(CXX) $(CFLAGS) -o test $(TARGET).c $(LINKING)
+	$(CXX) $(CFLAGS) -o test $(TARGET).cpp $(LINKING)
 	./test
 
 clean:
