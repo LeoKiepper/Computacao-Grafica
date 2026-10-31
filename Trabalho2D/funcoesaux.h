@@ -1,5 +1,5 @@
 #ifndef FUNCOESAUX_H
-#define	FUNCOESAUX_H
+#define FUNCOESAUX_H
 
 #include <GL/gl.h>
 

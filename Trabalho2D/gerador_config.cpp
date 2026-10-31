@@ -78,7 +78,7 @@ int main(int argc, char** argv)
     fprintf(structs, "#ifndef CONFIG_GERADO_H\n#define CONFIG_GERADO_H\n#include <string>\n\n");
     fprintf(structs, "struct Cor {\n    double R{};\n    double G{};\n    double B{};\n};\n\n");
     fprintf(structs, "struct Config {\n");
-    corpo(structs, &doc, "    ");   // the file's top-level elements are Config's fields
+    corpo(structs, &doc, "    ");
     fprintf(structs, "};\n\n#endif\n");
     fclose(structs);
 

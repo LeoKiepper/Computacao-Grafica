@@ -1,5 +1,5 @@
 #ifndef ATIRADOR_H
-#define	ATIRADOR_H
+#define ATIRADOR_H
 #include <GL/gl.h>
 #include "config.h"
 #include <math.h>
@@ -28,16 +28,16 @@ class Atirador{
         Cor corCabeca;
         ControladorMira* controlador = NULL;
         Vec2 pivoParaMundo(Vec2 p);
-    void DesenhaCirc(GLdouble radius, 
+    void DesenhaCirc(GLdouble radius,
         const Cor& cor);
-    void DesenhaRect(GLdouble height, GLdouble width, 
+    void DesenhaRect(GLdouble height, GLdouble width,
         const Cor& cor);
 
 
     public:
         Atirador(const Config& cfg, ColisaoArena limiteArena, GLdouble x0, GLdouble y0, GLdouble vel, GLdouble Direcao0, GLdouble fatorVelAnimPernas, Cor corCabeca)
-            : cfg(cfg), limiteArena(limiteArena), 
-            gPos_x(x0), gPos_y(y0), gVel(vel), 
+            : cfg(cfg), limiteArena(limiteArena),
+            gPos_x(x0), gPos_y(y0), gVel(vel),
             gTheta_jogador(Direcao0), gTheta_arma(0),
             fatorVelAnimPernas(fatorVelAnimPernas), corCabeca(corCabeca) {
                 this->escala = cfg.geometria.jogadores.raioCabeca / cfg.geometriaBase.jogadores.raioCabeca;

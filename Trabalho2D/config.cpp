@@ -7,8 +7,8 @@
 
 struct Leitor {
     TiXmlNode* no;
-    std::string caminho;  
-    
+    std::string caminho;
+
     const char* atributo(const char* nome)
     {
         TiXmlElement* e = no->ToElement();

@@ -1,6 +1,6 @@
 CC = gcc
 CXX = g++
-CFLAGS  = -g -Wall -MMD -MP
+CFLAGS  = -g -Wall -Wno-unknown-pragmas -MMD -MP
 LINKING = -lglut -lGL -lGLU
 TARGET = trabalhocg
 SOURCES = main.cpp tinyxml.cpp tinyxmlparser.cpp tinyxmlerror.cpp tinystr.cpp barril.cpp atirador.cpp config.cpp funcoesaux.cpp tiro.cpp eventos.cpp controlador_mira.cpp
@@ -34,7 +34,4 @@ $(OBJECTS): config_gerado.h
 config.o: config_campos.h
 clean: clean_config
 clean_config:
-	$(RM) gerador_config config_gerado.h config_campos.h
-
-
-
+	$(RM) gerador_config gerador_config.d config_gerado.h config_campos.h

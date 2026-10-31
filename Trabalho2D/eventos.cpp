@@ -46,4 +46,4 @@ void FilaDeEventos::limpa(){
     relogio_ms = 0;
     pausaRestante_ms = 0;
 }
-FilaDeEventos::~FilaDeEventos(){ limpa();} 
+FilaDeEventos::~FilaDeEventos(){ limpa();}

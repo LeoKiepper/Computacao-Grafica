@@ -2,7 +2,7 @@
 #include <GL/gl.h>
 #include <GL/glut.h>
 #include <stdlib.h>
-#include <cstdio> 
+#include <cstdio>
 
 void Barril::DesenhaRect(GLdouble height, GLdouble width, const Cor& cor)
     {

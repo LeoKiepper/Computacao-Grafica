@@ -1,5 +1,5 @@
 #ifndef BARRIL_H
-#define	BARRIL_H
+#define BARRIL_H
 
 #include "config.h"
 #include "atirador.h"
@@ -27,19 +27,19 @@ class Barril{
                 Atirador::ColisaoArena semColisao = [](auto&...){};
 
                 if(rand() % 2){ // Sorteia se esse barril vem com um inimigo, 50% de chance
-                    // Cria um inimigo que mexe as pernas na mesma velocidade 
+                    // Cria um inimigo que mexe as pernas na mesma velocidade
                     // do barril, no sentido contrário ao movimento.
-                    // A superfície de cima do barril se move com velocidade 
-                    // igual a 2 * velBarril com respeito ao SC_mundo. 
-                    // Para o inimigo ter uma velocidade resultante igual a 
-                    // + velBarril, também com respeito a SC_mundo, ele tem 
-                    // que se deslocar com respeito à superfície de cima do 
+                    // A superfície de cima do barril se move com velocidade
+                    // igual a 2 * velBarril com respeito ao SC_mundo.
+                    // Para o inimigo ter uma velocidade resultante igual a
+                    // + velBarril, também com respeito a SC_mundo, ele tem
+                    // que se deslocar com respeito à superfície de cima do
                     // barril com velocidade igual a - velBarril
                     inimigo = new Atirador(cfg,semColisao,x0,y0,
                         cfg.cinematica.barril.velocidade,-90,
                         -1,
                         cfg.cores.cabecaInimigo);
-                    inimigo->setControlador(new ServoOrdemZero(inimigo, alvo));
+                    inimigo->setControlador(new RastreadorOrdemZero(inimigo, alvo));
                 }
                 GLdouble t = (rand() / (double)RAND_MAX);
                 static const int rMin = cfg.jogo.barril.resistenciaMin;

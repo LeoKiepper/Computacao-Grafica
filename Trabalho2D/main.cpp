@@ -16,7 +16,7 @@
 // Coloca em variáveis globais os parâmetros de configuração usados nesse módulo ====
 #pragma region
     const Config cfg = lerConfiguracoes("configuracoes.xml");
-    const GLfloat arenaAltura = cfg.geometriaBase.arena.altura; 
+    const GLfloat arenaAltura = cfg.geometriaBase.arena.altura;
     const GLfloat arenaLargura = cfg.geometriaBase.arena.largura;
     const GLdouble raioCabeca = cfg.geometria.jogadores.raioCabeca;
     const GLdouble alturaBarril = cfg.geometriaBase.barril.altura;
@@ -26,7 +26,7 @@
     FilaDeEventos filaTiros;
 
     std::vector<Barril*> barril((size_t)cfg.jogo.barril.maximoSimultaneo, NULL);    // O vetor de booleans atende à interação destrutores -> main
-    std::vector<bool> barrilDeletado((size_t)cfg.jogo.barril.maximoSimultaneo, false);    
+    std::vector<bool> barrilDeletado((size_t)cfg.jogo.barril.maximoSimultaneo, false);
     std::vector<Tiro*> tirosJogador((size_t)cfg.jogo.tiros.tirosJogadorSimultaneosPermitidos, NULL);
     std::vector<Tiro*> tirosInimigo((size_t)cfg.jogo.tiros.tirosInimigosSimultaneosPerimtidos, NULL);
     int keyStatus[256];
@@ -106,7 +106,7 @@ void DesenhaLinhaDaMetade(){
             glVertex3f(-arenaLargura/2.0, 0, 0);
             glVertex3f( arenaLargura/2.0, 0, 0);
         glEnd();
-    glPopAttrib(); 
+    glPopAttrib();
 }
 void DesenhaLinhaDeTiro(Atirador* jogador){
     Vec2 p0 = jogador->p0arma();
@@ -127,7 +127,7 @@ void DesenhaLinhaDeTiro(Atirador* jogador){
             glVertex3f(p1.x, p1.y, 0);
             glVertex3f(p2.x, p2.y, 0);
         glEnd();
-    glPopAttrib(); 
+    glPopAttrib();
 }
 void EscreveTextoCentralizado(const char* texto, GLdouble y, void* fonte){
     int larguraPx = glutBitmapLength(fonte, (const unsigned char*)texto);
@@ -190,12 +190,12 @@ void ResetKeyStatus(){
     int i;
     //Initialize keyStatus
     for(i = 0; i < 256; i++)
-       keyStatus[i] = 0; 
+       keyStatus[i] = 0;
 }
 void display(void){
     // Clear the screen.
     glClear(GL_COLOR_BUFFER_BIT);
-    
+
     if (jogadorMorreu||venceu) {
         DesenhaTelaDeFim();
         glutSwapBuffers();
@@ -235,7 +235,7 @@ void passiveMotion(int x, int y){
     glutPostRedisplay();
 }
 
-// Cabeçalhos colocados aqui para o keyPress 
+// Cabeçalhos colocados aqui para o keyPress
 // saber da existência dessas funções, antes
 // da declaração
 void reiniciaJogo();
@@ -250,7 +250,7 @@ void keyPress(unsigned char key, int x, int y){
         case 'd':
         case 'D':
             keyStatus[(int)('d')] = 1;
-            break;        
+            break;
         case 'w':
         case 'W':
             keyStatus[(int)('w')] = 1;
@@ -281,7 +281,7 @@ void keyUp(unsigned char key, int x, int y){
     glutPostRedisplay();
 }
 void idle(void){
-    // Declarar 'antes' como static faz com que ele seja 
+    // Declarar 'antes' como static faz com que ele seja
     // 'global' (portanto sobrevive ao término da função),
     // mas escopada dentro da função idle, e sua inicialização
     // acontece só na primeira passada.
@@ -302,12 +302,12 @@ void idle(void){
     if(keyStatus[(int)('s')]) jogador->Anda(-dt_ms);
     if(keyStatus[(int)('a')]) jogador->Gira(dt_ms);
     if(keyStatus[(int)('d')]) jogador->Gira(-dt_ms);
-    
+
 
     // Trata mouse
-    jogador->MiraManual(mouse_dx, dt_ms);
+    jogador->MiraJogador(mouse_dx, dt_ms);
     mouse_dx = 0;
-    
+
     for(size_t bb=0; bb<barril.size(); bb++){
         if(barril[bb]){
             barril[bb]->Rola(dt_ms);
@@ -316,8 +316,8 @@ void idle(void){
             jogador->GetPos(x, y);
             if (barril[bb]->colisaoComCirculo(x,y, raioCabeca)) {
                 jogadorMorreu = true;
-                glutIdleFunc(NULL);     // congela: idle não é mais chamado
-                glutPostRedisplay();    // um último quadro, agora com a tela de morte
+                glutIdleFunc(NULL);
+                glutPostRedisplay();
                 return;
             }
         }
@@ -376,29 +376,24 @@ void idle(void){
     glutPostRedisplay();
 }
 void reiniciaJogo(){
-    // Destrói o mundo atual. Seguro na primeira chamada: está tudo NULL.
     for (size_t bb = 0; bb < barril.size(); bb++)       if (barril[bb])       deletaBarril(bb);
     for (size_t tt = 0; tt < tirosJogador.size(); tt++) if (tirosJogador[tt]) deletaTiro(tirosJogador, tt);
     for (size_t tt = 0; tt < tirosInimigo.size(); tt++) if (tirosInimigo[tt]) deletaTiro(tirosInimigo, tt);
     delete jogador;
     filaBarris.limpa();
     filaTiros.limpa();
-
-    // Estado
     jogadorMorreu = false;
     venceu = false;
     pausado = false;
     barris_destruidos = 0;
     ResetKeyStatus();
-
-    // Mundo novo
     jogador = new Atirador(cfg, colisaoArena_jogador,
         x0_jogador(), y0_jogador(), cfg.cinematica.jogador.velocidadeMovimento,
         90, 1, cfg.cores.cabecaJogador);
     filaBarris.agenda(0, novoBarril);
     filaTiros.agendaDaqui(cfg.jogo.inimigo.atrasoPrimeiroTiro, tiroInimigo);
-
     primeiroQuadro = true;
+
     glutIdleFunc(idle);
     glutPostRedisplay();
 }
@@ -433,12 +428,12 @@ int main(int argc, char** argv)
     // Configurações iniciais do glut ==========================================
     glutInit(&argc, argv);
     glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
-    glutInitWindowSize (arenaLargura, arenaAltura); 
+    glutInitWindowSize (arenaLargura, arenaAltura);
     glutInitWindowPosition (100, 100);
     glutCreateWindow ("Barris e atiradores 2d");
     glClearColor (cfg.cores.arena.R, cfg.cores.arena.G, cfg.cores.arena.B, 1.0);
 
-    glMatrixMode(GL_PROJECTION);   
+    glMatrixMode(GL_PROJECTION);
     glOrtho(-arenaLargura/2, arenaLargura/2,   -arenaAltura/2.0, arenaAltura/2.0,   -100, 100);
 
     glMatrixMode(GL_MODELVIEW);
@@ -447,10 +442,10 @@ int main(int argc, char** argv)
 
 
     // Registra callbacks ======================================================
-    glutDisplayFunc(display); 
+    glutDisplayFunc(display);
     glutKeyboardFunc(keyPress);
     glutKeyboardUpFunc(keyUp);
-    // Registra a função passiveMotion como passiva e ativa, para a lógica 
+    // Registra a função passiveMotion como passiva e ativa, para a lógica
     // enquanto o mouse estiver apertado; Isso corrige um bug que fazia a arma
     // Ser jogada para um lado quando o jogador clicava.
     glutPassiveMotionFunc(passiveMotion);
@@ -466,9 +461,9 @@ int main(int argc, char** argv)
     jogador = new Atirador(cfg, colisaoArena_jogador,
         x0_jogador(), y0_jogador(), cfg.cinematica.jogador.velocidadeMovimento,
         90, 1, cfg.cores.cabecaJogador);
-    filaBarris.agenda(0, 
+    filaBarris.agenda(0,
         novoBarril);
-    filaTiros.agendaDaqui(cfg.jogo.inimigo.atrasoPrimeiroTiro, 
+    filaTiros.agendaDaqui(cfg.jogo.inimigo.atrasoPrimeiroTiro,
         tiroInimigo);
     ResetKeyStatus();
 
