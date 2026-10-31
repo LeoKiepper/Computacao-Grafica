@@ -12,19 +12,23 @@ struct Cor {
 struct Config {
     struct jogo_t {
         struct inimigo_t {
-            std::string tirosPorSegundo{};
+            double tirosPorSegundo{};
+            double atrasoPrimeiroTiro{};
         } inimigo;
         struct tiros_t {
             double tirosJogadorSimultaneosPermitidos{};
+            double tirosInimigosSimultaneosPerimtidos{};
         } tiros;
         struct barril_t {
-            double tempoMinimoEntreBarris_s{};
+            double tempoEntreBarris_ms{};
+            double tempoPausaDestroi_ms{};
             double maximoSimultaneo{};
+            double resistenciaMax{};
+            double resistenciaMin{};
         } barril;
-        struct outros_t {
-            std::string pensar{};
-            std::string emAlgo{};
-        } outros;
+        struct regras_t {
+            double barrisParaDestruir{};
+        } regras;
     } jogo;
     struct geometriaBase_t {
         struct arena_t {

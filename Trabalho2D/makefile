@@ -3,7 +3,7 @@ CXX = g++
 CFLAGS  = -g -Wall -MMD -MP
 LINKING = -lglut -lGL -lGLU
 TARGET = trabalhocg
-SOURCES = main.cpp tinyxml.cpp tinyxmlparser.cpp tinyxmlerror.cpp tinystr.cpp barril.cpp atirador.cpp config.cpp funcoesaux.cpp tiro.cpp
+SOURCES = main.cpp tinyxml.cpp tinyxmlparser.cpp tinyxmlerror.cpp tinystr.cpp barril.cpp atirador.cpp config.cpp funcoesaux.cpp tiro.cpp eventos.cpp controlador_mira.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 
 all: $(TARGET)

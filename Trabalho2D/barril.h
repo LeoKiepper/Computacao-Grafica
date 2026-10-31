@@ -4,10 +4,12 @@
 #include "config.h"
 #include "atirador.h"
 #include <GL/gl.h>
+#include <random>
+#include "controlador_mira.h"
 
 class Barril{
     public:
-        using ColisaoArena = void (*)(GLdouble x, GLdouble y, int indice);
+        using ColisaoArena = void (*)(GLdouble x, GLdouble y, size_t indice);
     private:
         const Config& cfg;
         ColisaoArena limiteArena = NULL;
@@ -15,10 +17,10 @@ class Barril{
         GLdouble gPos_y;
         GLdouble escala = 1;
         Atirador* inimigo = NULL;
-        int indice;
-
+        size_t indice;
+        int resistencia=0;
     public:
-        Barril(const Config& cfg, ColisaoArena limiteArena, GLdouble x0, GLdouble y0, int bb)
+        Barril(const Config& cfg, ColisaoArena limiteArena, GLdouble x0, GLdouble y0, int bb, const Atirador* alvo)
             : cfg(cfg), limiteArena(limiteArena), gPos_x(x0), gPos_y(y0), indice(bb){
                 this->escala = cfg.geometria.jogadores.raioCabeca / cfg.geometriaBase.jogadores.raioCabeca;
 
@@ -37,12 +39,21 @@ class Barril{
                         cfg.cinematica.barril.velocidade,-90,
                         -1,
                         cfg.cores.cabecaInimigo);
+                    inimigo->setControlador(new ServoOrdemZero(inimigo, alvo));
                 }
+                GLdouble t = (rand() / (double)RAND_MAX);
+                static const int rMin = cfg.jogo.barril.resistenciaMin;
+                static const int rMax = cfg.jogo.barril.resistenciaMax;
+                resistencia = rMin + t * (rMax - rMin);
         };
         ~Barril(){ delete inimigo;};
         void DesenhaRect(GLdouble height, GLdouble width, const Cor& cor);
+        void DesenhaResistencia();
         void Desenha();
         void Rola(GLdouble dt);
+        bool colisaoComCirculo(GLdouble x, GLdouble y, GLdouble r);
+        bool danifica(int d);
+        Atirador* getInimigo(){return inimigo;}
         GLdouble posX(){return gPos_x;};
         GLdouble posY(){return gPos_y;};
 };

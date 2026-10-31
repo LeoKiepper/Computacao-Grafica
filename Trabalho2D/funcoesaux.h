@@ -27,6 +27,8 @@ Vec2 Normaliza(Vec2 v);
 Vec2 operator+(const Vec2& a, const Vec2& b);
 Vec2 operator-(const Vec2& a, const Vec2& b);
 Vec2 operator-(const Vec2& a);
+Vec2 operator*(const Vec2& a, GLdouble c);
+
 
 
 #endif /* FUNCOESAUX_H */

@@ -5,65 +5,49 @@
 #include <cmath>
 #include <math.h>
 #include "funcoesaux.h"
+#include "controlador_mira.h"
 
 #pragma region  // Funções de desenho
+// SC do pivô da arma -> SC do mundo. 
+// Mesma cadeia do Desenha: T(pos)·R(gTheta_jogador)·T(dx,0).
+Vec2 Atirador::pivoParaMundo(Vec2 p){
+    GLdouble dy = -escala * (cfg.geometriaBase.jogadores.raioCabeca
+                           + cfg.geometriaBase.jogadores.larguraArma/2.0);
+    GLdouble a  = gTheta_jogador * M_PI / 180.0;
+    GLdouble Tpiv[3][3] = {
+        {1, 0, 0},
+        {0, 1, dy},
+        {0, 0, 1}
+    };
+    GLdouble Rj[3][3]   = {
+        {cos(a), -sin(a), 0},
+        {sin(a),  cos(a), 0},
+        {        0,         0, 1}
+    };
+    GLdouble Tpos[3][3] = {
+        {1, 0, gPos_x},
+        {0, 1, gPos_y},
+        {0, 0, 1}
+    };
+    p = MultiplicaMatrizEsq2d(Tpiv, p);
+    p = MultiplicaMatrizEsq2d(Rj,   p);
+    p = MultiplicaMatrizEsq2d(Tpos, p);
+    return p;
+}
 Vec2 Atirador::p0arma(){
-    // Tome como p0 a origem do SC da arma, que, no SC de coordenadas do jogador, é o centro de rotação da mira
-    Vec2 p0 = {
-        escala * (cfg.geometriaBase.jogadores.larguraArma/2.0 + cfg.geometriaBase.jogadores.raioCabeca),
-        0,
-        1 // ponto, não vetor
-    };
-
-    // Recriando o caminho das transformações escritas em Jogador::Desenha()
-
-    // GLdouble ang = gTheta_jogador*M_PI/180.0;
-    // GLdouble rot[3][3]={
-    //     { cos(ang),-sin(ang),0},
-    //     { sin(ang), cos(ang),0},
-    //     {           0,          0,1}
-    // };
-    // Ponto2D aux = MultiplicaMatrizEsq2d(rot,p0);
-
-    // No momento, o centro de rotação na mira não gira com o jogador 
-    Vec2 aux = p0;
-    GLdouble transl[3][3]={
-        {1,0,gPos_x},
-        {0,1,gPos_y},
-        {0,0,1}
-    };
-    Vec2 ret = MultiplicaMatrizEsq2d(transl,aux);
-    return ret;
+    return pivoParaMundo(Vec2{0, 0, 1});
 }
 Vec2 Atirador::p1arma(){
-    // Tome como p1 a ponta da arma, no SC da arma
-    Vec2 p1 = {
-escala * (cfg.geometriaBase.jogadores.comprimentoArma + cfg.geometriaBase.jogadores.posyArma),        0,
-        1 // ponto, não vetor
+    // Ponta: extremo dianteiro do retângulo, no eixo da arma
+    GLdouble L = escala * (cfg.geometriaBase.jogadores.posyArma
+                         + cfg.geometriaBase.jogadores.comprimentoArma/2.0);
+    GLdouble a = gTheta_arma * M_PI / 180.0;
+    GLdouble Ra[3][3] = {
+        {cos(a), -sin(a), 0},
+        {sin(a),  cos(a), 0},
+        {        0,         0, 1}
     };
-
-    // Recriando o caminho das transformações escritas em Jogador::Desenha()
-    GLdouble ang = gTheta_arma*M_PI/180.0;
-    GLdouble rot[3][3]={
-        { cos(ang),-sin(ang),0},
-        { sin(ang), cos(ang),0},
-        {           0,          0,1}
-    };
-    Vec2 aux1 = MultiplicaMatrizEsq2d(rot,p1);
-    GLdouble dx = escala * (cfg.geometriaBase.jogadores.larguraArma/2.0 + cfg.geometriaBase.jogadores.raioCabeca);
-    GLdouble transl1[3][3]={
-        {1,0,dx},
-        {0,1,0},
-        {0,0,1}
-    };
-    Vec2 aux2 = MultiplicaMatrizEsq2d(transl1,aux1);
-    GLdouble transl2[3][3]={
-        {1,0,gPos_x},
-        {0,1,gPos_y},
-        {0,0,1}
-    };
-    Vec2 ret = MultiplicaMatrizEsq2d(transl2,aux2);
-    return ret;
+    return pivoParaMundo(MultiplicaMatrizEsq2d(Ra, Vec2{L, 0, 1}));
 }
 void Atirador::DesenhaCirc(GLdouble radius, const Cor& cor) {
     int NumPontos = 20;
@@ -112,18 +96,23 @@ void Atirador::Desenha(){
         r = escala * cfg.geometriaBase.jogadores.raioCabeca;
         DesenhaCirc(r, corCabeca);
         glPushMatrix();
-            // Desloca de uma quantidade no eixo X do SC do jogador, que é o mesmo do mundo
-            dx = escala * (cfg.geometriaBase.jogadores.larguraArma/2.0 + cfg.geometriaBase.jogadores.raioCabeca);
-            glTranslatef(dx,0,0);
-            // O centro de rotação da arma fica sendo dx no SC do jogador
+            // SC do atirador: frente em +x
+            glRotatef(gTheta_jogador, 0, 0, 1);
+            dy = -escala * (cfg.geometriaBase.jogadores.raioCabeca
+                          + cfg.geometriaBase.jogadores.larguraArma/2.0);
+            // pivô: ao lado da cabeça, em -y
+            glTranslatef(0, dy, 0);
+            // mira, em torno do pivô
             glRotatef(gTheta_arma, 0, 0, 1);
-            // Depois do rotate, desloca no eixo X do SC da arma, (x alinhado com o comprimento)
-            dx = escala * (cfg.geometriaBase.jogadores.comprimentoArma/2.0 + cfg.geometriaBase.jogadores.posyArma);
-            glTranslatef(dx,0,0);
+            dx = escala * cfg.geometriaBase.jogadores.posyArma;
+            // centro do retângulo, ao longo da arma
+            glTranslatef(dx, 0, 0);
             h = escala * cfg.geometriaBase.jogadores.larguraArma;
             w = escala * cfg.geometriaBase.jogadores.comprimentoArma;
+            // comprimento em x
             DesenhaRect(h, w, cfg.cores.arma);
         glPopMatrix();
+
     glPopMatrix();
 };
 #pragma endregion // Funções de desenho
@@ -196,21 +185,21 @@ void Atirador::Gira(GLdouble dt){
     GLdouble vel = cfg.cinematica.jogador.velocidadeGiro;
     gTheta_jogador += vel * dt;
 }
-void Atirador::Mira(GLdouble dx, GLdouble dt){
+
+// Função compartilhada entre os Mira dos dois tipos de Atirador
+void Atirador::GiraArma(GLdouble delta, GLdouble dt){
     GLdouble passoMax = cfg.cinematica.jogador.velocidadeMira * dt;
-    GLdouble delta = - dx;  // O sinal invertido compensa movimento em +x virando giro em -DeltaTheta
     if (delta >  passoMax) delta =  passoMax;
     if (delta < -passoMax) delta = -passoMax;
-
     GLdouble theta = gTheta_arma + delta;
-    GLdouble limite;
-
-    limite = 90 + cfg.cinematica.jogador.aberturaAngular/2.0;
-    if(theta>limite) theta = limite;
-    limite = 90 - cfg.cinematica.jogador.aberturaAngular/2.0;
-    if(theta<limite) theta = limite;
+    GLdouble meia = cfg.cinematica.jogador.aberturaAngular / 2.0;
+    if (theta > + meia) theta = meia;
+    if (theta < - meia) theta = -meia;
     gTheta_arma = theta;
 }
+void Atirador::MiraJogador(GLdouble dx, GLdouble dt){ GiraArma(-dx, dt); }
+void Atirador::MiraInimigo(GLdouble dt){ if (controlador) controlador->atua(dt); }
+Atirador::~Atirador(){ delete controlador; }
 void Atirador::Atira(std::vector<Tiro*> &tiros){
     Vec2 p1 = this->p1arma();
     Vec2 dir = Normaliza(p1 - this->p0arma());

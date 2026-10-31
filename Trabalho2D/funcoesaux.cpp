@@ -21,8 +21,8 @@ Vec2 Normaliza(Vec2 v){
     };
     return ret;
 }
-Vec2 operator+(const Vec2& a, const Vec2& b) { return Vec2{a.x + b.x, a.y + b.y, a.w + b.w}; }
-Vec2 operator-(const Vec2& a, const Vec2& b) { return Vec2{a.x - b.x, a.y - b.y, a.w - b.w}; }
-Vec2 operator-(const Vec2& a)                { return Vec2{-a.x, -a.y, -a.w}; }
-
+Vec2 operator+(const Vec2& a, const Vec2& b) { return Vec2{a.x + b.x, a.y + b.y, a.w + b.w};}
+Vec2 operator-(const Vec2& a, const Vec2& b) { return Vec2{a.x - b.x, a.y - b.y, a.w - b.w};}
+Vec2 operator-(const Vec2& a)                { return Vec2{-a.x, -a.y, -a.w};               }
+Vec2 operator*(const Vec2& a, GLdouble c)    { return Vec2{a.x * c, a.y * c, a.w * c};      }
 
