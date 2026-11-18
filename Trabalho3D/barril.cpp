@@ -4,8 +4,9 @@
 #include <stdlib.h>
 #include <cstdio>
 #include <GL/glu.h>
+#include "textura.h"
 
-void Barril::DesenhaResistencia(){
+void Barril::DesenhaResistencia(bool noturno){
     char texto[8];
     snprintf(texto, sizeof texto, "%d", resistencia);
 
@@ -15,7 +16,7 @@ void Barril::DesenhaResistencia(){
 
     glPushAttrib(GL_ENABLE_BIT);
     glDisable(GL_LIGHTING);
-    glColor3f(0, 0, 0);
+    AplicaCor(noturno ? cfg.cor.textoBarrilNoturno : cfg.cor.textoBarril);
     glRasterPos3f(gPos_x, gPos_y, z);
     glBitmap(0, 0, 0, 0, -largura/2.0, -4, NULL);
     for (const char* c = texto; *c; c++)
@@ -23,7 +24,7 @@ void Barril::DesenhaResistencia(){
     glPopAttrib();
 }
 
-void Barril::Desenha(){
+void Barril::Desenha(bool noturno){
     static GLUquadric* q = gluNewQuadric();
     gluQuadricNormals(q, GLU_SMOOTH);
     gluQuadricTexture(q, GL_TRUE);
@@ -38,20 +39,23 @@ void Barril::Desenha(){
         glRotatef(90, 0, 1, 0);
         glTranslatef(0, 0, -c/2.0);
 
-        glColor3f(cfg.cores.barril.R, cfg.cores.barril.G, cfg.cores.barril.B);
-        gluCylinder(q, r, r, c, 20, 1);
+        AplicaCor(cfg.cor.barril);
+        LigaTextura(tex.barril);
+        gluCylinder(q, r, r, c, cfg.geometria.barril.fatias,cfg.geometria.barril.stacks);
 
-        glColor3f(0.6*cfg.cores.barril.R, 0.6*cfg.cores.barril.G, 0.6*cfg.cores.barril.B);
+        AplicaCor(cfg.cor.tampaBarril);
+        LigaTextura(tex.tampaBarril);
         glPushMatrix();
             glRotatef(180, 0, 1, 0);
-            gluDisk(q, 0, r, 24, 1);
+            gluDisk(q, 0, r, cfg.geometria.barril.fatias, 1);
         glPopMatrix();
         glTranslatef(0, 0, c);
         gluDisk(q, 0, r, 24, 1);
     glPopMatrix();
+    DesligaTextura();
 
     if(inimigo) inimigo->Desenha();
-    DesenhaResistencia();
+    DesenhaResistencia(noturno);
 }
 
 void Barril::Rola(GLdouble dt){
@@ -97,7 +101,31 @@ bool Barril::colisaoComCirculo(GLdouble x, GLdouble y, GLdouble r)
     }
     return false;
 }
+bool Barril::colisaoComEsfera(Vec3 c, GLdouble rc){
+    GLdouble raio = escala * cfg.geometriaBase.barril.diametro / 2.0;
+    GLdouble meio = escala * cfg.geometriaBase.barril.altura / 2.0;
+    Vec3 p = c - Vec3{gPos_x, gPos_y, raio};
+    GLdouble axial = fabs(p.x);
+    GLdouble dyz   = sqrt(p.y*p.y + p.z*p.z);
+
+    if (axial <= meio)
+        return dyz <= raio + rc;
+    if (dyz <= raio)
+        return axial - meio <= rc;
+    GLdouble da = axial - meio;
+    GLdouble dr = dyz - raio;
+    return da*da + dr*dr <= rc*rc;
+}
+
 bool Barril::danifica(int d){
     resistencia -=d;
     return resistencia <=0;
+}
+
+GLdouble Barril::intersecaoRaio(Vec3 o, Vec3 d) const {
+    GLdouble r = escala * cfg.geometriaBase.barril.diametro / 2.0;
+    GLdouble m = escala * cfg.geometriaBase.barril.altura / 2.0;
+    GLdouble t = RaioCilindro(o, d, Vec3{gPos_x, gPos_y, r}, Vec3{1, 0, 0}, r, m);
+    if (inimigo) t = fmin(t, inimigo->intersecaoRaio(o, d));
+    return t;
 }

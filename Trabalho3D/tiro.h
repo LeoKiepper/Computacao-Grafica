@@ -3,39 +3,24 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include "funcoesaux.h"
+#include "config.h"
 #include <math.h>
 
-#define radiusTiro 5
-
 class Tiro {
-    GLdouble gXInit;
-    GLdouble gYInit;
-    GLdouble gX;
-    GLdouble gY;
-    GLdouble gDirectionAng;
+    const Config& cfg;
+    Vec3 gPosInit;
+    Vec3 gPos;
+    Vec3 gDir;
     GLdouble gVel;
-private:
-    void DesenhaCirc(GLdouble radius, GLfloat R, GLfloat G, GLfloat B);
-    void DesenhaTiro(GLdouble x, GLdouble y);
 public:
-    Tiro(Vec2 p0, Vec2 dir, GLdouble vel){
-        gXInit = p0.x;
-        gYInit = p0.y;
-        gX = gXInit;
-        gY = gYInit;
-        gDirectionAng = atan2(dir.y, dir.x);
-        gVel = vel;
-    };
-    void Desenha(){
-        DesenhaTiro(gX, gY);
-    };
+    Tiro(const Config& cfg, Vec3 p0, Vec3 dir, GLdouble vel)
+        : cfg(cfg), gPosInit(p0), gPos(p0), gDir(dir), gVel(vel) {}
+    void Desenha();
     void Move(GLdouble dt);
     bool Valido();
-    void GetPos(GLdouble &xOut, GLdouble &yOut){
-        xOut = gX;
-        yOut = gY;
-    };
+    Vec3 GetPos() const { return gPos; }
+    Vec3 GetDir() const { return gDir; }
+    GLdouble GetRaio() const { return cfg.geometria.tiro.raio; }
 };
-
 
 #endif /* TIRO_H */

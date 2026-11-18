@@ -1,32 +1,84 @@
 <jogo>
   <inimigo tirosPorSegundo="1" atrasoPrimeiroTiro="3000"/>
-  <tiros tirosJogadorSimultaneosPermitidos="5" tirosInimigosSimultaneosPerimtidos="10"/>
+  <tiro tirosJogadorSimultaneosPermitidos="5" tirosInimigosSimultaneosPerimtidos="10" distanciaMax="500"/>
   <barril tempoEntreBarris_ms="3000" tempoPausaDestroi_ms="200" maximoSimultaneo="3" resistenciaMax="5" resistenciaMin="1" />
-  <regras barrisParaDestruir="10"/>
+  <controles sensibilidadeMouseArma="0.2" fatorSensCam3="5"/>
+  <tamJanela altura="500" largura="500"/>
+  <reinicio tempoSegurar_ms="1000"/>
+  <pontos barril="1" atirador="2" paraGanhar="10"/>
+  <visaoOponente altura="200"/>
 </jogo>
 
-<!-- As dimensões declaradas em geometriaBase relativas aos componentes usados -->
-<!-- para desenhar jogador e inimigos são os valores de referência. A escala é -->
-<!-- calculada programaticamente fazendo -->
+<!-- As dimensões declaradas em geometriaBase são relativas aos componentes usados -->
+<!-- para desenhar jogador e inimigos. A escala é calculada programaticamente fazendo -->
 <!-- geometria.jogadores.raioCabeca / geometriaBase.jogadores.raioCabeca -->
 <geometriaBase>
-  <arena  altura="800" largura="400"/>
-  <jogadores raioCabeca="30" larguraArma="20" comprimentoArma="110" posyArma="30" comprimentoPernas="50" larguraPernas="15"/>
+  <jogadores raioCabeca="30" larguraArma="20" alturaArma="10" comprimentoArma="110" posyArma="30" comprimentoPernas="50" larguraPernas="15"/>
   <barril altura="150" diametro="80"/>
+  <miraLaser diametro="6" comprimento="40" sobressalto="10"/>
 </geometriaBase>
 <geometria>
   <jogadores raioCabeca="15"/>
+  <tiro raio="5"/>
+  <arena  comprimento="800" largura="400" alturaParede="50" tamMalha="5"/>
+  <barril fatias="20" stacks="20"/>
+  <miraLaser fatias="12"/>
 </geometria>
 <cinematica>
-  <jogador velocidadeMovimento="0.20" velocidadeGiro="0.20" velocidadeMira="0.05" aberturaAngular="60"/>
+  <jogador velocidadeMovimento="0.20" velocidadeGiro="0.20" velocidadeMira="0.05" aberturaAngular="60" />
   <tiros velocidadeTiro="0.25"/>
   <barril velocidade="0.1"/>
 </cinematica>
-<cores>
+<cor>
   <arena R="0.30980392156862745098" G="0.50588235294117647059" B="0.74117647058823529412"/>
   <arma R="0.75294117647058823529" G="0.31372549019607843137" B="0.3019607843137254902"/>
+  <miraLaser R="0.75294117647058823529" G="0.31372549019607843137" B="0.3019607843137254902"/>
   <cabecaJogador R="0.60784313725490196079" G="0.73333333333333333333" B="0.3490196078431372549" />
   <cabecaInimigo R="0.5019607843137254902" G="0.39215686274509803922" B="0.63529411764705882353" />
-  <pernas R="0" G="0" B="0" />
-  <barril R="0.96862745098039215686" G="0.58823529411764705882" B="0.27450980392156862745"/>
-</cores>
+  <pernas R="0.25" G="0.25" B="0.25" />
+  <barril R="1" G="1" B="1"/>
+  <tampaBarril R="1" G="1" B="1"/>
+  <textoBarril R="0" G="0" B="0"/>
+  <textoBarrilNoturno R="1" G="1" B="1"/>
+  <chao R="1" G="1" B="1"/>
+  <paredes R="1" G="1" B="1"/>
+  <tiro R="1" G="1" B="1"/>
+  <linhaMeioArena R="0" G="0" B="0"/>
+  <linhaBordaArena R="0" G="0" B="0"/>
+  <octaedroLuzArena R="1" G="1" B="1"/>
+  <laser R="1" G="0" B="0"/>
+  <minimapaJogador R="0" G="1" B="0"/>
+  <minimapaInimigo R="1" G="0" B="0"/>
+  <minimapaBarril R="0.96862745098039215686" G="0.58823529411764705882" B="0.27450980392156862745"/>
+  <reinicioFundo R="0.3" G="0.3" B="0.3"/>
+  <reinicioProgresso R="1" G="1" B="1"/>
+  <fundoNoturno R="0.02" G="0.02" B="0.06"/>
+  <divisoria R="1" G="1" B="1"/>
+</cor>
+<linha>
+  <meioArena espessura="3"/>
+  <bordaArena espessura="3"/>
+  <laser espessura="1"/>
+  <divisoria espessura="3"/>
+</linha>
+<luz>
+  <arena tamanhoOctaedro="10" altura="500" offset="100" difusa="1" expoenteSpot="8" atenuacaoConstante="0.5" atenuacaoLinear="0" atenuacaoQuadratica="2e-6"/>
+  <global ambiente="0.15" ambienteNoturno="0.03"/>
+  <lanterna difusa="1" corte_deg="25" expoente="10" atenuacaoConstante="1" atenuacaoLinear="0" atenuacaoQuadratica="0.000005"/>
+</luz>
+<camera>
+  <geral FOVy_deg="60" near="1"/>
+  <!--far é calculado com base nos outros parâmetros-->
+  <cam1 alturaOlho_p100AlturaCorpo="80"/>
+  <cam2 alturaOlho="20"/>
+  <cam3 raioInicial="500" raioMin="100" raioMax="800" passoZoom="1.02" sensibilidadeMouse="0.3" yawInicial_deg="0" pitchInicial_deg="45" pitchMin_deg="-60" pitchMax_deg="60"/>
+</camera>
+<hud>
+  <laser raioPonto="4"/>
+  <minimapa fracao="0.25"/>
+  <reinicio raio="20"/>
+</hud>
+<textura>
+  <arquivo chao="texturas/chao.bmp" paredes="texturas/parede.bmp" barril="texturas/barril.bmp" tampaBarril="texturas/chao.bmp" corpo="texturas/corpo.bmp" pernas="texturas/pernas.bmp" arma="texturas/arma.bmp" tiro="texturas/tiro.bmp"/>
+  <arena ladrilho="100"/>
+</textura>

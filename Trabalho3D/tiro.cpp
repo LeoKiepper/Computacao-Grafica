@@ -1,40 +1,25 @@
 #include "tiro.h"
+#include "textura.h"
 #include <math.h>
-#define DISTANCIA_MAX 500
 
-void Tiro::DesenhaCirc(GLdouble radius, GLfloat R, GLfloat G, GLfloat B)
-{
-    int NumPontos = 10;
-    glColor3f(R, G, B);
-    glBegin(GL_POLYGON);
-        for(int pp=0; pp<NumPontos; pp++){
-            glVertex3f(radius*cos(2*M_PI/NumPontos*pp),radius*sin(2*M_PI/NumPontos*pp),0);
-        }
-    glEnd();
-}
-
-void Tiro::DesenhaTiro(GLdouble x, GLdouble y)
-{
-    glNormal3f(0, 0, 1);
-    glMatrixMode(GL_MODELVIEW);
+void Tiro::Desenha(){
+    static GLUquadric* q = gluNewQuadric();
+    gluQuadricNormals(q, GLU_SMOOTH);
+    gluQuadricTexture(q, GL_TRUE);
+    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
+    glDisable(GL_LIGHTING);
+    AplicaCor(cfg.cor.tiro);
+    LigaTextura(tex.tiro);
     glPushMatrix();
-        glTranslatef(x, y, 0);
-        DesenhaCirc(radiusTiro, 1, 1, 1);
+        glTranslatef(gPos.x, gPos.y, gPos.z);
+        gluSphere(q, GetRaio(), 10, 8);
     glPopMatrix();
+    glPopAttrib();
 }
 
-void Tiro::Move(GLdouble dt)
-{
-    gX += cos(gDirectionAng)*gVel*dt;
-    gY += sin(gDirectionAng)*gVel*dt;
+void Tiro::Move(GLdouble dt){
+    gPos = gPos + gDir * (gVel * dt);
 }
-
-bool Tiro::Valido()
-{
-    GLfloat DeltaX = gX - gXInit;
-    GLfloat DeltaY = gY - gYInit;
-    if((DeltaX*DeltaX + DeltaY*DeltaY) >= (DISTANCIA_MAX*DISTANCIA_MAX)){
-        return 0;
-    }
-    return 1;
+bool Tiro::Valido(){
+    return Norma(gPos - gPosInit) < cfg.jogo.tiro.distanciaMax && gPos.z >= 0;
 }

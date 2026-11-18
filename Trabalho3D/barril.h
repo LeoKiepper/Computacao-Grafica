@@ -40,7 +40,7 @@ class Barril{
                     inimigo = new Atirador(cfg,semColisao,x0,y0,
                         cfg.cinematica.barril.velocidade,-90,
                         -1,
-                        cfg.cores.cabecaInimigo);
+                        cfg.cor.cabecaInimigo);
                     inimigo->setControlador(new RastreadorOrdemZero(inimigo, alvo));
                     inimigo->SetPosZ(escala * cfg.geometriaBase.barril.diametro);
 
@@ -52,14 +52,19 @@ class Barril{
         };
         ~Barril(){ delete inimigo;};
         void DesenhaRect(GLdouble height, GLdouble width, const Cor& cor);
-        void DesenhaResistencia();
-        void Desenha();
+        void DesenhaResistencia(bool noturno);
+        void Desenha(bool noturno);
         void Rola(GLdouble dt);
         bool colisaoComCirculo(GLdouble x, GLdouble y, GLdouble r);
+        bool colisaoComEsfera(Vec3 c, GLdouble rc);
+        void mataInimigo(){ delete inimigo; inimigo = NULL; }
+
         bool danifica(int d);
         Atirador* getInimigo(){return inimigo;}
         GLdouble posX(){return gPos_x;};
         GLdouble posY(){return gPos_y;};
+
+        GLdouble intersecaoRaio(Vec3 o, Vec3 d) const;
 };
 
 #endif /* BARRIL_H */

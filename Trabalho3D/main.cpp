@@ -13,42 +13,47 @@
 #include <vector>
 #include <ctime>
 #include <cstdlib>
+#include <cmath>
+#include "textura.h"
 
 // Coloca em variáveis globais os parâmetros de configuração usados nesse módulo ====
 #pragma region
     const Config cfg = lerConfiguracoes("configuracoes.xml");
-    const GLfloat arenaAltura = cfg.geometriaBase.arena.altura;
-    const GLfloat arenaLargura = cfg.geometriaBase.arena.largura;
-    const double diagonalArena = sqrt(arenaLargura*arenaLargura + arenaAltura*arenaAltura);
+    const GLfloat arenaComprimento = cfg.geometria.arena.comprimento;
+    const GLfloat arenaLargura = cfg.geometria.arena.largura;
+    const double diagonalArena = sqrt(arenaLargura*arenaLargura + arenaComprimento*arenaComprimento);
     const GLdouble raioCabeca = cfg.geometria.jogadores.raioCabeca;
-    const GLdouble alturaBarril = cfg.geometriaBase.barril.altura;
-    const GLdouble diametroBarril = cfg.geometriaBase.barril.diametro;
-    const GLfloat alturaParede = 50.0;
+    const GLdouble escala = raioCabeca / cfg.geometriaBase.jogadores.raioCabeca;
+    const GLdouble alturaBarril = escala * cfg.geometriaBase.barril.altura;
+    const GLdouble diametroBarril = escala * cfg.geometriaBase.barril.diametro;
+    const GLfloat alturaParede = cfg.geometria.arena.alturaParede;
+    const GLdouble janelaLargura = cfg.jogo.tamJanela.largura;
+    const GLdouble janelaAltura = cfg.jogo.tamJanela.altura;
     Atirador* jogador = NULL;
     FilaDeEventos filaBarris;
     FilaDeEventos filaTiros;
 
     std::vector<Barril*> barril((size_t)cfg.jogo.barril.maximoSimultaneo, NULL);    // O vetor de booleans atende à interação destrutores -> main
     std::vector<bool> barrilDeletado((size_t)cfg.jogo.barril.maximoSimultaneo, false);
-    std::vector<Tiro*> tirosJogador((size_t)cfg.jogo.tiros.tirosJogadorSimultaneosPermitidos, NULL);
-    std::vector<Tiro*> tirosInimigo((size_t)cfg.jogo.tiros.tirosInimigosSimultaneosPerimtidos, NULL);
+    std::vector<Tiro*> tirosJogador((size_t)cfg.jogo.tiro.tirosJogadorSimultaneosPermitidos, NULL);
+    std::vector<Tiro*> tirosInimigo((size_t)cfg.jogo.tiro.tirosInimigosSimultaneosPerimtidos, NULL);
     int keyStatus[256];
 
     float cursor_x = 0, cursor_y = 0;
-    float mouse_dx = 0;
+    float mouse_dx = 0, mouse_dy = 0;
     float last_cursor_x=0, last_cursor_y=0;
 
     const Limites limitesJogador = {
         -arenaLargura/2.0 + raioCabeca,     // xMin
          arenaLargura/2.0 - raioCabeca,     // xMax
-        -arenaAltura/2.0  + raioCabeca,     // yMin
+        -arenaComprimento/2.0  + raioCabeca,     // yMin
                           - raioCabeca      // yMax (linha do meio)
     };
     const Limites limitesBarril = {
         -arenaLargura/2.0 + alturaBarril/2.0,   // xMin
          arenaLargura/2.0 - alturaBarril/2.0,   // xMax
-        -arenaAltura/2.0  - diametroBarril/2.0, // yMin
-         arenaAltura/2.0  + diametroBarril/2.0  // yMax
+        -arenaComprimento/2.0  - diametroBarril/2.0, // yMin
+         arenaComprimento/2.0  + diametroBarril/2.0  // yMax
     };
     GLdouble x0_jogador(){return limitesJogador.centroX();};
     GLdouble y0_jogador(){return limitesJogador.yMin;};
@@ -61,37 +66,79 @@
     GLdouble y0_barril(){return limitesBarril.yMax;};
     bool jogadorMorreu = false;
     bool venceu = false;
-    int barris_destruidos = 0;
+    int pontuacao = 0;
     bool primeiroQuadro = true;
     bool pausado = false;
-    bool mostraLinhaDeTiro = true;
+    bool laserLigado = false;
 
 
 
 
-    enum ModoCamera { CAM_CIMA, CAM_TERCEIRA_PESSOA };
-    ModoCamera modoCamera = CAM_CIMA;
+    enum ModoCamera {CAM_OLHO, CAM_ARMA, CAM_TERCEIRA_PESSOA };
+    ModoCamera modoCamera = CAM_OLHO;
 
     // Câmera de terceira pessoa, em coordenadas esféricas em torno do jogador
-    const double cam3Raio        = 1100.0;  // distância do olho ao jogador
-    const double cam3PitchMax    = 60.0;    // limite de elevação (graus, ±)
-    const double cam3Sensib      = 0.3;     // graus por pixel de arrasto
-    double cam3Yaw   = 0.0;    // desvio horizontal em relação à direção do jogador (graus)
-    double cam3Pitch = 30.0;   // elevação acima do plano do chão (graus)
+    const double cam3RaioMin   = cfg.camera.cam3.raioMin;
+    const double cam3RaioMax   = cfg.camera.cam3.raioMax;
+    const double cam3PassoZoom = cfg.camera.cam3.passoZoom;
+    double cam3Raio            = cfg.camera.cam3.raioInicial;
+    const double cam3PitchMin  = cfg.camera.cam3.pitchMin_deg;
+    const double cam3PitchMax  = cfg.camera.cam3.pitchMax_deg;
+    const double cam3Sensib    = cfg.camera.cam3.sensibilidadeMouse;
+    double cam3Yaw   = cfg.camera.cam3.yawInicial_deg;
+    double cam3Pitch = cfg.camera.cam3.pitchInicial_deg;
+
 
     // Estado do arrasto com o botão direito
     bool cam3Arrastando = false;
     int  arrasto_x = 0, arrasto_y = 0;
+    const double camFovy = cfg.camera.geral.FOVy_deg;
 
-    const double camFovy = 60.0;   // graus
-    const double distanciaCamera_Cima = (arenaAltura / 2.0) / tan(camFovy / 2.0 * M_PI / 180.0);
+    const double camNear = cfg.camera.geral.near;
+    const double camFar = cam3RaioMax + diagonalArena;
 
-    const double camNear = 1.0;
-    const double camFar        = fmax(2*distanciaCamera_Cima, cam3Raio + diagonalArena);
+    bool laserNaTela = false;
+    GLdouble laserTelaX = 0, laserTelaY = 0;
+    bool segurandoReinicio = false;
+    GLdouble inicioReinicio_ms = 0;
+    bool modoNoturno = false;
 
 #pragma endregion
 
-
+GLint LarguraJogo(){ return glutGet(GLUT_WINDOW_WIDTH); }
+GLint AlturaVisao(){ return cfg.jogo.visaoOponente.altura; }
+GLint AlturaJogo(){ return glutGet(GLUT_WINDOW_HEIGHT) - AlturaVisao(); }
+bool CursorPreso(){
+    return (modoCamera == CAM_OLHO || modoCamera == CAM_ARMA)
+        && !pausado && !jogadorMorreu && !venceu;
+}
+void AtualizaCursor(){
+    static int anterior = -1;
+    bool preso = CursorPreso();
+    if (preso == anterior) return;
+    anterior = preso;
+    glutSetCursor(preso ? GLUT_CURSOR_NONE : GLUT_CURSOR_INHERIT);
+    if (preso) {
+        int cx = LarguraJogo() / 2;
+        int cy = AlturaVisao() + AlturaJogo() / 2;
+        glutWarpPointer(cx, cy);
+        cursor_x = cx;
+        cursor_y = cy;
+        mouse_dx = 0;
+        mouse_dy = 0;
+    }
+}
+void DefineViewport(GLint x, GLint y, GLint w, GLint h){
+    glViewport(x, y, w, h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(camFovy, (GLdouble)w / h, camNear, camFar);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+void DefineModoCamera(ModoCamera m){
+    modoCamera = m;
+}
 void colisaoArena_jogador(GLdouble& x, GLdouble& y) {
     limitesJogador.limita(x, y);
 }
@@ -125,46 +172,24 @@ void pausaFilaPorDestruicao(){
 void DesenhaLinhaDaMetade(){
     glPushAttrib(GL_LINE_BIT | GL_ENABLE_BIT);
         glDisable(GL_LIGHTING);
-        glLineWidth(3.0);
         glEnable(GL_LINE_STIPPLE);
         glLineStipple(1, 0x00FF);
-        glColor3f(0, 0, 0);
+        glLineWidth(cfg.linha.meioArena.espessura);
+        AplicaCor(cfg.cor.linhaMeioArena);
         glBegin(GL_LINES);
             glVertex3f(-arenaLargura/2.0, 0, 0);
             glVertex3f( arenaLargura/2.0, 0, 0);
         glEnd();
     glPopAttrib();
 }
-void DesenhaLinhaDeTiro(Atirador* jogador){
-    Vec2 p0 = jogador->p0arma();
-    Vec2 p1 = jogador->p1arma();
-
-    Vec2 dir = Normaliza(p1 - p0);
-    GLdouble len = sqrt(
-        cfg.geometriaBase.arena.altura * cfg.geometriaBase.arena.altura +
-        cfg.geometriaBase.arena.largura * cfg.geometriaBase.arena.largura
-    );
-    Vec2 p2 = p1 + dir * len;
-    glPushAttrib(GL_LINE_BIT | GL_ENABLE_BIT);
-        glDisable(GL_LIGHTING);
-        glLineWidth(3.0);
-        glEnable(GL_LINE_STIPPLE);
-        glLineStipple(1, 0x00FF);
-        glColor3f(0, 0, 0);
-        glBegin(GL_LINES);
-            glVertex3f(p1.x, p1.y, 0);
-            glVertex3f(p2.x, p2.y, 0);
-        glEnd();
-    glPopAttrib();
-}
 void DesenhaBordaArena(){
     // Contorno da arena no chão (z=0)
     GLfloat xMax = arenaLargura/2.0;
-    GLfloat yMax = arenaAltura/2.0;
+    GLfloat yMax = arenaComprimento/2.0;
     glPushAttrib(GL_LINE_BIT | GL_CURRENT_BIT | GL_ENABLE_BIT);
         glDisable(GL_LIGHTING);
-        glLineWidth(3.0);
-        glColor3f(0, 0, 0);
+        glLineWidth(cfg.linha.bordaArena.espessura);
+        AplicaCor(cfg.cor.linhaBordaArena);
         glBegin(GL_LINE_LOOP);   // fecha o último vértice com o primeiro
             glVertex3f(-xMax, -yMax, 0);
             glVertex3f( xMax, -yMax, 0);
@@ -173,7 +198,7 @@ void DesenhaBordaArena(){
         glEnd();
     glPopAttrib();
 }
-void DesenhaRetanguloSubdividido(const GLfloat o[3], const GLfloat u[3], const GLfloat v[3], GLfloat tamCelula){
+void DesenhaRetanguloSubdividido(const GLfloat o[3], const GLfloat u[3], const GLfloat v[3], GLfloat tamCelula, GLfloat tamLadrilho){
     GLfloat n[3] = { u[1]*v[2] - u[2]*v[1],
                      u[2]*v[0] - u[0]*v[2],
                      u[0]*v[1] - u[1]*v[0] };
@@ -181,6 +206,7 @@ void DesenhaRetanguloSubdividido(const GLfloat o[3], const GLfloat u[3], const G
     GLfloat lv = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
     int nu = (int)ceil(lu / tamCelula);
     int nv = (int)ceil(lv / tamCelula);
+    GLfloat su = lu / tamLadrilho, sv = lv / tamLadrilho;
 
     glNormal3fv(n);
     for (int j = 0; j < nv; j++){
@@ -189,7 +215,7 @@ void DesenhaRetanguloSubdividido(const GLfloat o[3], const GLfloat u[3], const G
             GLfloat a = (GLfloat)i / nu;
             for (int k = 0; k < 2; k++){
                 GLfloat b = (GLfloat)(j + 1 - k) / nv;
-                glTexCoord2f(a, b);
+                glTexCoord2f(a * su, b * sv);
                 glVertex3f(o[0] + a*u[0] + b*v[0],
                            o[1] + a*u[1] + b*v[1],
                            o[2] + a*u[2] + b*v[2]);
@@ -199,59 +225,96 @@ void DesenhaRetanguloSubdividido(const GLfloat o[3], const GLfloat u[3], const G
     }
 }
 void DesenhaArena(){
-    GLfloat x = arenaLargura/2.0, y = arenaAltura/2.0, h = alturaParede;
-    const GLfloat cel = 20.0;
+    GLfloat x = arenaLargura/2.0, y = arenaComprimento/2.0, h = alturaParede;
+    const GLfloat tamMalha = cfg.geometria.arena.tamMalha;
+    const GLfloat tamLadrilho = cfg.textura.arena.ladrilho;
 
     glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT);
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(1.0, 1.0);
-    glColor3f(0.40, 0.35, 0.28);
+    AplicaCor(cfg.cor.chao);
+    LigaTextura(tex.chao);
     {
+
         GLfloat o[] = {-x, -y, 0}, u[] = {2*x, 0, 0}, v[] = {0, 2*y, 0};
-        DesenhaRetanguloSubdividido(o, u, v, cel);
+        DesenhaRetanguloSubdividido(o, u, v, tamMalha, tamLadrilho);
     }
     glPopAttrib();
 
-    glColor3f(0.5, 0.5, 0.5);
+    AplicaCor(cfg.cor.paredes);
+    LigaTextura(tex.paredes);
     {
+
         GLfloat o[] = {-x,  y, 0}, u[] = { 2*x, 0, 0}, v[] = {0, 0, h};
-        DesenhaRetanguloSubdividido(o, u, v, cel);
+        DesenhaRetanguloSubdividido(o, u, v, tamMalha, tamLadrilho);
     }
     {
         GLfloat o[] = { x, -y, 0}, u[] = {-2*x, 0, 0}, v[] = {0, 0, h};
-        DesenhaRetanguloSubdividido(o, u, v, cel);
+        DesenhaRetanguloSubdividido(o, u, v, tamMalha, tamLadrilho);
     }
     {
         GLfloat o[] = {-x, -y, 0}, u[] = {0,  2*y, 0}, v[] = {0, 0, h};
-        DesenhaRetanguloSubdividido(o, u, v, cel);
+        DesenhaRetanguloSubdividido(o, u, v, tamMalha, tamLadrilho);
     }
     {
         GLfloat o[] = { x,  y, 0}, u[] = {0, -2*y, 0}, v[] = {0, 0, h};
-        DesenhaRetanguloSubdividido(o, u, v, cel);
+        DesenhaRetanguloSubdividido(o, u, v, tamMalha, tamLadrilho);
     }
+    DesligaTextura();
 }
+
 void EscreveTextoCentralizado(const char* texto, GLdouble dy, void* fonte){
     int larguraPx = glutBitmapLength(fonte, (const unsigned char*)texto);
-    GLdouble w = glutGet(GLUT_WINDOW_WIDTH);
-    GLdouble h = glutGet(GLUT_WINDOW_HEIGHT);
+    GLdouble w = LarguraJogo();
+    GLdouble h = AlturaJogo();
     glRasterPos2f(w/2.0 - larguraPx/2.0, h/2.0 + dy);
     for (const char* c = texto; *c; c++)
         glutBitmapCharacter(fonte, *c);
 }
+void DesenhaSetor(GLdouble x, GLdouble y, GLdouble r, GLdouble fracao){
+    if (fracao <= 0) return;
+    int n = (int)ceil(48 * fracao);
+    glBegin(GL_TRIANGLE_FAN);
+        glVertex2d(x, y);
+        for (int i = 0; i <= n; i++){
+            GLdouble a = M_PI/2 - 2*M_PI*fracao*i/n;
+            glVertex2d(x + r*cos(a), y + r*sin(a));
+        }
+    glEnd();
+}
+void DesenhaDisco(GLdouble x, GLdouble y, GLdouble r){
+    DesenhaSetor(x, y, r, 1.0);
+}
+GLdouble FracaoReinicio(){
+    if (!segurandoReinicio) return 0;
+    return fmin(1.0, (glutGet(GLUT_ELAPSED_TIME) - inicioReinicio_ms) / cfg.jogo.reinicio.tempoSegurar_ms);
+}
 void DesenhaTelaDeFim(){
     const char *mensagem = jogadorMorreu ? "Voce morreu!" : "Voce venceu!";
+    GLdouble f = FracaoReinicio();
     glColor3f(1, 1, 1);
     EscreveTextoCentralizado(mensagem, 0, GLUT_BITMAP_HELVETICA_18);
-    EscreveTextoCentralizado("Aperte ENTER para reiniciar", -20, GLUT_BITMAP_HELVETICA_18);
+    EscreveTextoCentralizado(f < 1 ? "Mantenha o botao esquerdo apertado para reiniciar!"
+                                   : "O jogo vai iniciar quando soltar o botao do mouse!",
+                             -20, GLUT_BITMAP_HELVETICA_18);
+
+    GLdouble r = cfg.hud.reinicio.raio;
+    GLdouble x = LarguraJogo() / 2.0;
+    GLdouble y = AlturaJogo() / 2.0 - 40 - r;
+    AplicaCor(cfg.cor.reinicioFundo);
+    DesenhaDisco(x, y, r);
+    AplicaCor(cfg.cor.reinicioProgresso);
+    DesenhaSetor(x, y, r, f);
 }
+
 void IniciaHUD(){
     // Entra em modo HUD: coordenadas em pixels da janela,
     // origem no canto inferior esquerdo, sem influência da câmera.
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, glutGet(GLUT_WINDOW_WIDTH),
-            0, glutGet(GLUT_WINDOW_HEIGHT),
+    glOrtho(0, LarguraJogo(),
+            0, AlturaJogo(),
             -1, 1);
 
     glMatrixMode(GL_MODELVIEW);
@@ -272,51 +335,147 @@ void TerminaHUD(){
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 }
+Vec3 PosOlho(const Atirador* a){
+    GLdouble H = Atirador::Altura(cfg);
+    GLdouble dz = cfg.camera.cam1.alturaOlho_p100AlturaCorpo / 100.0 * H - (H - raioCabeca);
+    GLdouble rho = sqrt(fmax(0.0, raioCabeca*raioCabeca - dz*dz));
+    GLdouble t = a->GetTheta() * M_PI / 180.0;
+    return a->CentroCorpo() + Vec3{rho*cos(t), rho*sin(t), dz};
+}
 void PosicionaCamera(){
-    // Carrega a câmera do modo atual na MODELVIEW
-    if (modoCamera == CAM_TERCEIRA_PESSOA) {
-        GLdouble x, y;
-        jogador->GetPos(x, y);
-        // Azimute: direção do jogador + desvio do arrasto
-        GLdouble t = (jogador->GetTheta() + cam3Yaw) * M_PI / 180.0;
-        GLdouble f = cam3Pitch * M_PI / 180.0;
-        gluLookAt(
-            // Eye x, y, z
-            x - cam3Raio*cos(f)*cos(t),
-            y - cam3Raio*cos(f)*sin(t),
-            cam3Raio*sin(f),
-            // Center x, y, z
-            x, y, 0,
-            // Up x, y, z
-            0, 0, 1);
-    } else { //modoCamera == CAM_CIMA
-        gluLookAt(0, 0, distanciaCamera_Cima,
-                  0, 0, 0,
-                  0, 1, 0);
+    switch (modoCamera) {
+        case CAM_ARMA: {
+            Vec3 p0 = jogador->p0arma();
+            Vec3 dir = Normaliza(jogador->p1arma() - p0);
+            Vec3 olho = p0 + Vec3{0, 0, escala * cfg.camera.cam2.alturaOlho};
+            Vec3 alvo = olho + dir;
+            gluLookAt(olho.x, olho.y, olho.z,
+                    alvo.x, alvo.y, alvo.z,
+                    0, 0, 1);
+            break;
+        }
+        case CAM_TERCEIRA_PESSOA: {
+            GLdouble x, y;
+            jogador->GetPos(x, y);
+            GLdouble t = (jogador->GetTheta() + cam3Yaw) * M_PI / 180.0;
+            GLdouble f = cam3Pitch * M_PI / 180.0;
+            gluLookAt(x - cam3Raio*cos(f)*cos(t),
+                    y - cam3Raio*cos(f)*sin(t),
+                    cam3Raio*sin(f),
+                    x, y, 0,
+                    0, 0, 1);
+            break;
+        }
+        case CAM_OLHO: {
+            GLdouble t = jogador->GetTheta() * M_PI / 180.0;
+            Vec3 olho = PosOlho(jogador);
+            Vec3 alvo = olho + Vec3{cos(t), sin(t), 0};
+            gluLookAt(olho.x, olho.y, olho.z,
+                      alvo.x, alvo.y, alvo.z,
+                      0, 0, 1);
+            break;
+        }
     }
 }
+Atirador* InimigoDaVisao(){
+    static size_t atual = 0;
+    if (atual < barril.size() && barril[atual] && barril[atual]->getInimigo())
+        return barril[atual]->getInimigo();
+    for (size_t bb = 0; bb < barril.size(); bb++)
+        if (barril[bb] && barril[bb]->getInimigo()) {
+            atual = bb;
+            return barril[bb]->getInimigo();
+        }
+    return NULL;
+}
+bool PosicionaCameraOponente(){
+    Atirador* ini = InimigoDaVisao();
+    if (!ini) return false;
+    Vec3 olho = PosOlho(ini);
+    Vec3 alvo = jogador->CentroCorpo();
+    gluLookAt(olho.x, olho.y, olho.z,
+              alvo.x, alvo.y, alvo.z,
+              0, 0, 1);
+    return true;
+}
 void PosicionaLuzes(){
-    GLfloat posLuz0[] = {0, 0, 5 * alturaParede, 1};
-    glLightfv(GL_LIGHT0, GL_POSITION, posLuz0);
+    const auto& l = cfg.luz.arena;
+    GLfloat a = modoNoturno ? cfg.luz.global.ambienteNoturno : cfg.luz.global.ambiente;
+    GLfloat ambiente[] = {a, a, a, 1};
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambiente);
 
+    GLfloat d = l.offset / sqrt(2.0);
+    GLfloat x = arenaLargura/2.0 - d, y = arenaComprimento/2.0 - d, z = l.altura;
+    GLfloat cantos[4][2] = {{-x, -y}, {x, -y}, {x, y}, {-x, y}};
+    GLfloat baixo[] = {0, 0, -1};
+    for (int i = 0; i < 4; i++){
+        GLfloat pos[] = {cantos[i][0], cantos[i][1], z, 1};
+        glLightfv(GL_LIGHT0 + i, GL_POSITION, pos);
+        glLightfv(GL_LIGHT0 + i, GL_SPOT_DIRECTION, baixo);
+        if (modoNoturno) glDisable(GL_LIGHT0 + i);
+        else             glEnable(GL_LIGHT0 + i);
+    }
+
+    Vec3 p = jogador->OrigemLaser();
+    Vec3 dir = jogador->DirArma();
+    GLfloat posL[] = {(GLfloat)p.x, (GLfloat)p.y, (GLfloat)p.z, 1};
+    GLfloat dirL[] = {(GLfloat)dir.x, (GLfloat)dir.y, (GLfloat)dir.z};
+    glLightfv(GL_LIGHT4, GL_POSITION, posL);
+    glLightfv(GL_LIGHT4, GL_SPOT_DIRECTION, dirL);
+    if (modoNoturno) glEnable(GL_LIGHT4);
+    else             glDisable(GL_LIGHT4);
+
+    if (modoNoturno) return;
     glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
     glDisable(GL_LIGHTING);
-    glColor3f(1, 1, 1);
-    glPushMatrix();
-        glTranslatef(posLuz0[0], posLuz0[1], posLuz0[2]);
-        glScalef(10, 10, 10);
-        glutSolidOctahedron();
-    glPopMatrix();
+    AplicaCor(cfg.cor.octaedroLuzArena);
+    GLfloat t = l.tamanhoOctaedro;
+    for (int i = 0; i < 4; i++){
+        glPushMatrix();
+            glTranslatef(cantos[i][0], cantos[i][1], z);
+            glScalef(t, t, t);
+            glutSolidOctahedron();
+        glPopMatrix();
+    }
     glPopAttrib();
 }
+
+
+void ConfiguraLuzes(){
+    const auto& l = cfg.luz.arena;
+    GLfloat difusa[] = {(GLfloat)l.difusa, (GLfloat)l.difusa, (GLfloat)l.difusa, 1};
+    GLfloat preto[] = {0, 0, 0, 1};
+    for (int i = 0; i < 4; i++){
+        GLenum L = GL_LIGHT0 + i;
+        glLightfv(L, GL_AMBIENT, preto);
+        glLightfv(L, GL_DIFFUSE, difusa);
+        glLightf(L, GL_SPOT_CUTOFF, 90);
+        glLightf(L, GL_SPOT_EXPONENT, l.expoenteSpot);
+        glLightf(L, GL_CONSTANT_ATTENUATION, l.atenuacaoConstante);
+        glLightf(L, GL_LINEAR_ATTENUATION, l.atenuacaoLinear);
+        glLightf(L, GL_QUADRATIC_ATTENUATION, l.atenuacaoQuadratica);
+    }
+    const auto& t = cfg.luz.lanterna;
+    GLfloat dl[] = {(GLfloat)t.difusa, (GLfloat)t.difusa, (GLfloat)t.difusa, 1};
+    glLightfv(GL_LIGHT4, GL_AMBIENT, preto);
+    glLightfv(GL_LIGHT4, GL_DIFFUSE, dl);
+    glLightf(GL_LIGHT4, GL_SPOT_CUTOFF, t.corte_deg);
+    glLightf(GL_LIGHT4, GL_SPOT_EXPONENT, t.expoente);
+    glLightf(GL_LIGHT4, GL_CONSTANT_ATTENUATION, t.atenuacaoConstante);
+    glLightf(GL_LIGHT4, GL_LINEAR_ATTENUATION, t.atenuacaoLinear);
+    glLightf(GL_LIGHT4, GL_QUADRATIC_ATTENUATION, t.atenuacaoQuadratica);
+
+}
+
 void ImprimePlacar(GLfloat x, GLfloat y){
     static char str[1000];
     glColor3f(1.0, 1.0, 1.0);
-    sprintf(str, "Barris destruidos: %d", barris_destruidos);
+    sprintf(str, "Pontos: %d/%d", pontuacao, (int)cfg.jogo.pontos.paraGanhar);
     glRasterPos2f(x, y);
     for (char *p = str; *p; p++)
         glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *p);
 }
+
 void tiroInimigo(){
     // Lista efêmera: vale só dentro deste evento
     std::vector<Atirador*> vivos;
@@ -329,48 +488,155 @@ void tiroInimigo(){
 
     filaTiros.agendaDaqui(1000.0 / cfg.jogo.inimigo.tirosPorSegundo, tiroInimigo);
 }
+GLdouble RaioArena(Vec3 o, Vec3 d){
+    GLdouble X = arenaLargura/2.0, Y = arenaComprimento/2.0;
+    GLdouble t = INFINITY;
+    if (d.x > 0) t = fmin(t, ( X - o.x) / d.x);
+    if (d.x < 0) t = fmin(t, (-X - o.x) / d.x);
+    if (d.y > 0) t = fmin(t, ( Y - o.y) / d.y);
+    if (d.y < 0) t = fmin(t, (-Y - o.y) / d.y);
+    if (d.z < 0) t = fmin(t, -o.z / d.z);
+    if (o.z + t * d.z > alturaParede) return INFINITY;
+    return t;
+}
+void DesenhaLaser(){
+    Vec3 o = jogador->OrigemLaser();
+    Vec3 d = jogador->DirArma();
+    GLdouble t = RaioArena(o, d);
+    for (size_t bb = 0; bb < barril.size(); bb++)
+        if (barril[bb]) t = fmin(t, barril[bb]->intersecaoRaio(o, d));
+    bool acertou = std::isfinite(t);
+    Vec3 fim = o + d * (acertou ? t : diagonalArena);
+
+    glPushAttrib(GL_LINE_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT);
+        glDisable(GL_LIGHTING);
+        glLineWidth(cfg.linha.laser.espessura);
+        AplicaCor(cfg.cor.laser);
+        glBegin(GL_LINES);
+            glVertex3d(o.x, o.y, o.z);
+            glVertex3d(fim.x, fim.y, fim.z);
+        glEnd();
+    glPopAttrib();
+
+    GLdouble mv[16], pj[16], z;
+    GLint vp[4];
+    glGetDoublev(GL_MODELVIEW_MATRIX, mv);
+    glGetDoublev(GL_PROJECTION_MATRIX, pj);
+    glGetIntegerv(GL_VIEWPORT, vp);
+    gluProject(fim.x, fim.y, fim.z, mv, pj, vp, &laserTelaX, &laserTelaY, &z);
+    laserNaTela = acertou && z >= 0 && z <= 1;
+}
+
+void DesenhaPontoLaser(){
+    if (!laserNaTela) return;
+    glPushAttrib(GL_CURRENT_BIT);
+    AplicaCor(cfg.cor.laser);
+    DesenhaDisco(laserTelaX, laserTelaY, cfg.hud.laser.raioPonto);
+    glPopAttrib();
+}
+void DesenhaMinimapa(){
+    GLint w = LarguraJogo(), h = AlturaJogo();
+    GLint vw = w * cfg.hud.minimapa.fracao, vh = h * cfg.hud.minimapa.fracao;
+    GLdouble sx = arenaLargura/2.0, sy = arenaComprimento/2.0;
+    if (sx / sy < (GLdouble)vw / vh) sx = sy * vw / vh;
+    else                             sy = sx * vh / vw;
+
+    glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT);
+    glViewport(w - vw, 0, vw, vh);
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(-sx, sx, -sy, sy, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_TEXTURE_2D);
+
+    DesenhaBordaArena();
+    DesenhaLinhaDaMetade();
+
+    GLdouble mx = alturaBarril / 2.0, my = diametroBarril / 2.0;
+    for (size_t bb = 0; bb < barril.size(); bb++){
+        if (!barril[bb]) continue;
+        GLdouble x = barril[bb]->posX(), y = barril[bb]->posY();
+        AplicaCor(cfg.cor.minimapaBarril);
+        glRectd(x - mx, y - my, x + mx, y + my);
+        Atirador* ini = barril[bb]->getInimigo();
+        if (ini) {
+            ini->GetPos(x, y);
+            AplicaCor(cfg.cor.minimapaInimigo);
+            DesenhaDisco(x, y, raioCabeca);
+        }
+    }
+    GLdouble xj, yj;
+    jogador->GetPos(xj, yj);
+    AplicaCor(cfg.cor.minimapaJogador);
+    DesenhaDisco(xj, yj, raioCabeca);
+
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    glPopAttrib();
+}
+
+
 void ResetKeyStatus(){
     int i;
     //Initialize keyStatus
     for(i = 0; i < 256; i++)
        keyStatus[i] = 0;
 }
-void display(void){
-    int w;
-    int h;
-
-    // Clear the screen.
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    PosicionaCamera();
+void DesenhaCena(){
     PosicionaLuzes();
-
+    if (laserLigado) DesenhaLaser();
     DesenhaArena();
-
-
-
     jogador->Desenha();
-
-
-    for (size_t i = 0; i < tirosJogador.size(); i++){
+    for (size_t i = 0; i < tirosJogador.size(); i++)
         if (tirosJogador[i]) tirosJogador[i]->Desenha();
-    }
     for (size_t i = 0; i < tirosInimigo.size(); i++)
         if (tirosInimigo[i]) tirosInimigo[i]->Desenha();
-
-    for(size_t bb=0; bb<barril.size(); bb++)
-        if(barril[bb]) barril[bb]->Desenha();
-
+    for (size_t bb = 0; bb < barril.size(); bb++)
+        if (barril[bb]) barril[bb]->Desenha(modoNoturno);
     DesenhaBordaArena();
     DesenhaLinhaDaMetade();
-    if (mostraLinhaDeTiro) DesenhaLinhaDeTiro(jogador);
+}
+void DesenhaDivisoria(GLint w, GLint h){
+    GLfloat e = cfg.linha.divisoria.espessura;
+    glPushAttrib(GL_LINE_BIT | GL_CURRENT_BIT);
+    glLineWidth(e);
+    AplicaCor(cfg.cor.divisoria);
+    glBegin(GL_LINES);
+        glVertex2f(0, h - e/2);
+        glVertex2f(w, h - e/2);
+    glEnd();
+    glPopAttrib();
+}
+void display(void){
+    AtualizaCursor();
+
+    // Clear the screen.
+    const Cor& fundo = modoNoturno ? cfg.cor.fundoNoturno : cfg.cor.arena;
+    glClearColor(fundo.R, fundo.G, fundo.B, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    GLint w = LarguraJogo(), h = AlturaJogo(), hv = AlturaVisao();
+
+    if (hv > 0) {
+        DefineViewport(0, h, w, hv);
+        if (PosicionaCameraOponente()) DesenhaCena();
+    }
+
+    DefineViewport(0, 0, w, h);
+    PosicionaCamera();
+    DesenhaCena();
+    DesenhaMinimapa();
 
     IniciaHUD();
-        w = glutGet(GLUT_WINDOW_WIDTH);
-        h = glutGet(GLUT_WINDOW_HEIGHT);
         ImprimePlacar(w - 200, h - 20);
+        if (laserLigado) DesenhaPontoLaser();
         if (jogadorMorreu || venceu) {
             DesenhaTelaDeFim();
         } else if (pausado) {
@@ -378,14 +644,28 @@ void display(void){
             EscreveTextoCentralizado("PAUSADO", 0, GLUT_BITMAP_HELVETICA_18);
             EscreveTextoCentralizado("Aperte P para continuar", -20, GLUT_BITMAP_HELVETICA_18);
         }
+        if (hv > 0) DesenhaDivisoria(w, h);
+        ImprimePlacar(w - 200, h - 20);
+
     TerminaHUD();
     glutSwapBuffers(); // Desenha the new frame of the game.
 }
+
 void passiveMotion(int x, int y){
-    float novo_x = float(x) - arenaLargura/2.0;
-    mouse_dx += novo_x - cursor_x;       // soma: vários eventos por quadro não se perdem
-    cursor_x = novo_x;
-    cursor_y = arenaAltura/2.0 - float(y);
+    mouse_dx += x - cursor_x;
+    mouse_dy += cursor_y - y;
+    cursor_x = x;
+    cursor_y = y;
+
+    if (CursorPreso()) {
+        int cx = LarguraJogo() / 2;
+        int cy = AlturaVisao() + AlturaJogo() / 2;
+        if (x != cx || y != cy) {
+            glutWarpPointer(cx, cy);
+            cursor_x = cx;
+            cursor_y = cy;
+        }
+    }
     glutPostRedisplay();
 }
 void motion(int x, int y){
@@ -394,15 +674,15 @@ void motion(int x, int y){
         return;
     }
     cam3Yaw   -= (x - arrasto_x) * cam3Sensib;
-    cam3Pitch += (arrasto_y - y) * cam3Sensib;
+    cam3Pitch -= (arrasto_y - y) * cam3Sensib;
     cam3Yaw    = fmod(cam3Yaw, 360.0);
-    if (cam3Pitch >  cam3PitchMax) cam3Pitch =  cam3PitchMax;
-    if (cam3Pitch < -cam3PitchMax) cam3Pitch = -cam3PitchMax;
+    if (cam3Pitch > cam3PitchMax) cam3Pitch = cam3PitchMax;
+    if (cam3Pitch < cam3PitchMin) cam3Pitch = cam3PitchMin;
     arrasto_x = x;
     arrasto_y = y;
 
     cursor_x = float(x) - arenaLargura/2.0;
-    cursor_y = arenaAltura/2.0 - float(y);
+    cursor_y = arenaComprimento/2.0 - float(y);
     glutPostRedisplay();
 }
 
@@ -436,17 +716,29 @@ void keyPress(unsigned char key, int x, int y){
             break;
         case 'l':
         case 'L':
-            mostraLinhaDeTiro = !mostraLinhaDeTiro;
+            laserLigado = !laserLigado;
             break;
-        case 13: // Enter
-            reiniciaJogo();
+        case '1':
+            DefineModoCamera(CAM_OLHO);
             break;
-        case '3': 
-            modoCamera = CAM_TERCEIRA_PESSOA; 
+        case '2':
+            DefineModoCamera(CAM_ARMA);
             break;
-        case '0': 
-            modoCamera = CAM_CIMA;
-            break;  
+        case '3':
+            DefineModoCamera(CAM_TERCEIRA_PESSOA);
+            break;
+        case '+':
+        case '=':
+            cam3Raio = fmax(cam3Raio / cam3PassoZoom, cam3RaioMin);
+            break;
+        case '-':
+        case '_':
+            cam3Raio = fmin(cam3Raio * cam3PassoZoom, cam3RaioMax);
+            break;
+        case 'n':
+        case 'N':
+            modoNoturno = !modoNoturno;
+            break;
         case 27 :
             exit(0);
 
@@ -456,6 +748,14 @@ void keyPress(unsigned char key, int x, int y){
 void keyUp(unsigned char key, int x, int y){
     keyStatus[(int)(key)] = 0;
     glutPostRedisplay();
+}
+bool SomaPontos(int p){
+    pontuacao += p;
+    if (pontuacao < cfg.jogo.pontos.paraGanhar) return false;
+    venceu = true;
+    glutIdleFunc(NULL);
+    glutPostRedisplay();
+    return true;
 }
 void idle(void){
     // Declarar 'antes' como static faz com que ele seja
@@ -482,12 +782,16 @@ void idle(void){
 
 
     // Trata mouse
-    jogador->MiraJogador(mouse_dx, dt_ms);
+    GLdouble radPorPixel = cfg.jogo.controles.sensibilidadeMouseArma
+                         * camFovy * M_PI / 180.0 / AlturaJogo();
+    if (modoCamera == CAM_TERCEIRA_PESSOA) radPorPixel *= cfg.jogo.controles.fatorSensCam3;
+    jogador->MiraJogador(mouse_dx * radPorPixel, mouse_dy * radPorPixel);
     mouse_dx = 0;
+    mouse_dy = 0;
 
     for(size_t bb=0; bb<barril.size(); bb++){
         if(barril[bb]){
-            barril[bb]->Rola(dt_ms);
+            if (!pausado) barril[bb]->Rola(dt_ms);
             if(barrilDeletado[bb]){ deletaBarril(bb); continue; }
             GLdouble x, y;
             jogador->GetPos(x, y);
@@ -506,41 +810,38 @@ void idle(void){
         tirosJogador[tt]->Move(dt_ms);
         if (!tirosJogador[tt]->Valido()) { deletaTiro(tirosJogador,tt); continue; }
 
-        GLdouble x, y;
-        tirosJogador[tt]->GetPos(x, y);      // não muda dentro do laço de barris
+        Vec3 s = tirosJogador[tt]->GetPos();
+        Vec3 d = tirosJogador[tt]->GetDir();
 
         for (size_t bb = 0; bb < barril.size(); bb++){
-            if (!barril[bb]) continue;       // posição vazia do vetor
-            if (!barril[bb]->colisaoComCirculo(x, y, radiusTiro)) continue;
+            if (!barril[bb]) continue;
+            Atirador* ini = barril[bb]->getInimigo();
+            if (ini && ini->colisaoComTiro(s, d, tirosJogador[tt]->GetRaio())) {
+                barril[bb]->mataInimigo();
+                deletaTiro(tirosJogador, tt);
+                if (SomaPontos(cfg.jogo.pontos.atirador)) return;
+                break;
+            }
+            if (!barril[bb]->colisaoComEsfera(s, tirosJogador[tt]->GetRaio())) continue;
 
             if (barril[bb]->danifica(1)) {
                 deletaBarril(bb);
                 filaBarris.agendaDaqui(0, pausaFilaPorDestruicao);
-                barris_destruidos++;
-                if(barris_destruidos>=cfg.jogo.regras.barrisParaDestruir){
-                    venceu = true;
-                    glutIdleFunc(NULL);     // congela: idle não é mais chamado
-                    glutPostRedisplay();    // um último quadro, agora com a tela de morte
-                    return;
-                }
+                if (SomaPontos(cfg.jogo.pontos.barril)) return;
             }
             deletaTiro(tirosJogador,tt);
-            break;                           // o tiro deixou de existir
+            break;
+
         }
     }
     GLdouble xj, yj;
     jogador->GetPos(xj, yj);
     for (size_t tt = 0; tt < tirosInimigo.size(); tt++){
         if (!tirosInimigo[tt]) continue;
-        tirosInimigo[tt]->Move(dt_ms);
+        if (!pausado) tirosInimigo[tt]->Move(dt_ms);
         if (!tirosInimigo[tt]->Valido()) { deletaTiro(tirosInimigo, tt); continue; }
 
-        GLdouble x, y;
-        tirosInimigo[tt]->GetPos(x, y);
-        GLdouble dx = x - xj;
-        GLdouble dy = y - yj;
-        GLdouble alcance = raioCabeca + radiusTiro;
-        if (dx*dx + dy*dy <= alcance*alcance) {
+        if (jogador->colisaoComTiro(tirosInimigo[tt]->GetPos(), tirosInimigo[tt]->GetDir(), tirosInimigo[tt]->GetRaio())) {
             jogadorMorreu = true;
             glutIdleFunc(NULL);
             glutPostRedisplay();
@@ -548,8 +849,13 @@ void idle(void){
         }
     }
 
-    filaBarris.avanca(dt_ms);
-    filaTiros.avanca(dt_ms);
+    if (!pausado) {
+        filaBarris.avanca(dt_ms);
+        filaTiros.avanca(dt_ms);
+    }
+    glutPostRedisplay();
+}
+void idleTelaDeFim(){
     glutPostRedisplay();
 }
 void reiniciaJogo(){
@@ -562,38 +868,49 @@ void reiniciaJogo(){
     jogadorMorreu = false;
     venceu = false;
     pausado = false;
-    barris_destruidos = 0;
+    pontuacao = 0;
     ResetKeyStatus();
     jogador = new Atirador(cfg, colisaoArena_jogador,
         x0_jogador(), y0_jogador(), cfg.cinematica.jogador.velocidadeMovimento,
-        90, 1, cfg.cores.cabecaJogador);
+        90, 1, cfg.cor.cabecaJogador);
     filaBarris.agenda(0, novoBarril);
     filaTiros.agendaDaqui(cfg.jogo.inimigo.atrasoPrimeiroTiro, tiroInimigo);
     primeiroQuadro = true;
+    laserLigado = false;
 
     glutIdleFunc(idle);
     glutPostRedisplay();
 }
 void alternaPausa(){
     if (jogadorMorreu || venceu) return;
-    if (pausado) {
-        glutIdleFunc(NULL);
-    } else {
-        primeiroQuadro = true;
-        glutIdleFunc(idle);
-    }
+    pausado = !pausado;
     glutPostRedisplay();
 }
 void mouse(int button, int state, int x, int y){
     static bool apertado=false;
     if (button==GLUT_LEFT_BUTTON) {
-        if (state==0){  // Botão apertado
+        bool fim = jogadorMorreu || venceu;
+        if (state==GLUT_DOWN){
             if(!apertado){
                 apertado = true;
-                if (!pausado) jogador->Atira(tirosJogador);
+                if (fim) {
+                    segurandoReinicio = true;
+                    inicioReinicio_ms = glutGet(GLUT_ELAPSED_TIME);
+                    glutIdleFunc(idleTelaDeFim);
+                } else {
+                    jogador->Atira(tirosJogador);
+                }
             }
         } else {
-            if(apertado) apertado = false;
+            if(apertado){
+                apertado = false;
+                if (fim && segurandoReinicio) {
+                    bool completo = FracaoReinicio() >= 1;
+                    segurandoReinicio = false;
+                    glutIdleFunc(NULL);
+                    if (completo) reiniciaJogo();
+                }
+            }
         }
     }
     if (button == GLUT_RIGHT_BUTTON) {
@@ -610,30 +927,18 @@ int main(int argc, char** argv)
     // Configurações iniciais do glut ==========================================
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-    glutInitWindowSize (arenaLargura, arenaAltura);
-    glutInitWindowPosition (100, 100);
-    glutCreateWindow ("Barris e atiradores 2d");
+    glutInitWindowSize(janelaLargura, janelaAltura + cfg.jogo.visaoOponente.altura);
+    glutCreateWindow("Barris e atiradores 3d");
+    CarregaTexturas(cfg);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
+    ConfiguraLuzes();
     glEnable(GL_COLOR_MATERIAL);
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     glShadeModel(GL_SMOOTH);
     glEnable(GL_NORMALIZE);
 
-    glClearColor (cfg.cores.arena.R, cfg.cores.arena.G, cfg.cores.arena.B, 1.0);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    // fovy escolhido para que, em z=0, o volume cubra exatamente a arena
-    gluPerspective(
-        camFovy, 
-        (double)arenaLargura / arenaAltura, 
-        camNear, 
-        camFar);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
+    glClearColor (cfg.cor.arena.R, cfg.cor.arena.G, cfg.cor.arena.B, 1.0);
 
 
 
@@ -653,7 +958,7 @@ int main(int argc, char** argv)
 
     jogador = new Atirador(cfg, colisaoArena_jogador,
         x0_jogador(), y0_jogador(), cfg.cinematica.jogador.velocidadeMovimento,
-        90, 1, cfg.cores.cabecaJogador);
+        90, 1, cfg.cor.cabecaJogador);
     filaBarris.agenda(0,
         novoBarril);
     filaTiros.agendaDaqui(cfg.jogo.inimigo.atrasoPrimeiroTiro,
